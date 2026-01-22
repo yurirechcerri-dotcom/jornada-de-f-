@@ -1,0 +1,8 @@
+{
+  "name": "Jornada de Fé",
+  "description": "Um devocional diário minimalista para fortalecer sua vida espiritual com jornadas de 7 e 21 dias.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

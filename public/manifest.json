@@ -1,0 +1,22 @@
+
+{
+  "short_name": "JornadaFé",
+  "name": "Jornada de Fé: Devocional Diário",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=512&h=512&auto=format&fit=crop",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#C2A385",
+  "background_color": "#FDFCF8"
+}
