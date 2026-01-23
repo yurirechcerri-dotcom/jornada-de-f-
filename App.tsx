@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -83,9 +82,10 @@ const App: React.FC = () => {
   });
 
   const handleLogin = useCallback(() => {
-    console.log("App: Login autenticado com sucesso");
     localStorage.setItem('is_authenticated', 'true');
     setIsAuthenticated(true);
+    // Forçar redirecionamento para garantir que as rotas atualizem
+    window.location.hash = "#/";
   }, []);
 
   return (
@@ -97,7 +97,6 @@ const App: React.FC = () => {
         />
         <Route path="/thank-you" element={<ThankYou />} />
         
-        {/* Rotas Protegidas agrupadas */}
         <Route 
           path="/*" 
           element={

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
@@ -19,6 +18,17 @@ const JourneyDetail: React.FC = () => {
 
   const mockUserId = "user-123";
 
+  // Cálculos de progresso
+  const isCompleted = (contentId: string) => completions.some(c => c.content_id === contentId);
+  const completedCount = content.filter(item => isCompleted(item.id)).length;
+  const totalCount = content.length;
+  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  // Hooks de animação (DEVEM FICAR NO TOPO E FORA DE CONDICIONAIS)
+  const springProgress = useSpring(0, { stiffness: 60, damping: 20 });
+  const widthTransform = useTransform(springProgress, (v: number) => `${v}%`);
+  const leftTransform = useTransform(springProgress, (v: number) => `${v}%`);
+
   useEffect(() => {
     const load = async () => {
       if (journeyId) {
@@ -37,7 +47,11 @@ const JourneyDetail: React.FC = () => {
     load();
   }, [journeyId]);
 
-  const isCompleted = (contentId: string) => completions.some(c => c.content_id === contentId);
+  useEffect(() => {
+    if (!loading) {
+      springProgress.set(progressPercentage);
+    }
+  }, [progressPercentage, springProgress, loading]);
   
   const handleOpenDay = (day: ContentItem) => {
     setSelectedDay(day);
@@ -73,15 +87,6 @@ const JourneyDetail: React.FC = () => {
   };
 
   const theme = getJourneyTheme();
-  const completedCount = content.filter(item => isCompleted(item.id)).length;
-  const totalCount = content.length;
-  const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-  // Spring animation for the progress bar
-  const springProgress = useSpring(0, { stiffness: 60, damping: 20 });
-  useEffect(() => {
-    springProgress.set(progressPercentage);
-  }, [progressPercentage, springProgress]);
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C2A385]"></div></div>;
 
@@ -96,7 +101,6 @@ const JourneyDetail: React.FC = () => {
         </h1>
       </header>
 
-      {/* Progresso Card Ultra Refinado */}
       <div className="bg-white p-8 rounded-[3rem] border border-[#C2A385]/10 shadow-xl space-y-6 relative overflow-hidden group">
         <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${theme.color} opacity-[0.03] rounded-full -mr-32 -mt-32 blur-3xl`} />
         
@@ -131,26 +135,21 @@ const JourneyDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Barra de Progresso Fluida */}
         <div className="relative h-4 w-full bg-[#FDFCF8] rounded-full overflow-hidden shadow-inner border border-[#C2A385]/5">
           <motion.div 
-            style={{ width: useTransform(springProgress, (v) => `${v}%`) }}
+            style={{ width: widthTransform }}
             className={`absolute top-0 left-0 h-full bg-gradient-to-r ${theme.color} relative overflow-hidden rounded-full shadow-lg shadow-[#C2A385]/20`}
           >
-            {/* Efeito Liquid/Wave */}
             <motion.div 
               animate={{ x: ['-100%', '100%'] }}
               transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg]"
             />
-            
-            {/* Partícula na Ponta */}
             <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/50 blur-[2px]" />
           </motion.div>
           
-          {/* Brilho que segue o progresso */}
           <motion.div
-             style={{ left: useTransform(springProgress, (v) => `${v}%`) }}
+             style={{ left: leftTransform }}
              className="absolute top-1/2 -translate-y-1/2 -ml-2"
           >
             <motion.div
@@ -168,7 +167,6 @@ const JourneyDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline de Cards */}
       <div className="space-y-4 pt-2">
         {content.map((item, idx) => {
           const done = isCompleted(item.id);
@@ -223,7 +221,6 @@ const JourneyDetail: React.FC = () => {
         })}
       </div>
 
-      {/* Modal - Devocional */}
       <AnimatePresence>
         {selectedDay && (
           <motion.div 
