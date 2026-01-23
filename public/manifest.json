@@ -1,7 +1,7 @@
-
 {
   "short_name": "JornadaFé",
-  "name": "Jornada de Fé: Devocional Diário",
+  "name": "Jornada de Fé: Caminhada Diária",
+  "description": "Seu aplicativo de devocional e crescimento espiritual diário.",
   "icons": [
     {
       "src": "https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop",
@@ -15,8 +15,10 @@
       "type": "image/png"
     }
   ],
-  "start_url": ".",
+  "start_url": "/#/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#C2A385",
-  "background_color": "#FDFCF8"
+  "background_color": "#FDFCF8",
+  "scope": "/"
 }

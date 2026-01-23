@@ -2,8 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Jornada de Fé</title>
+    
+    <!-- PWA Settings -->
+    <meta name="theme-color" content="#C2A385" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Jornada de Fé" />
+    <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop" />
+    <link rel="manifest" href="/manifest.json" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +24,7 @@
         background-color: #FDFCF8;
         color: #2C3E50;
         -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: contain;
       }
       .font-serif {
         font-family: 'Crimson Pro', serif;
