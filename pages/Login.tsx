@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, UserPlus, LogIn } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import AppLogo from '../components/AppLogo';
 
 const Login: React.FC = () => {
@@ -17,28 +17,36 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setErrorMsg(null);
 
+    // Verificação preventiva de configuração
+    if (!isSupabaseConfigured()) {
+      setErrorMsg("Erro de Configuração: A chave 'anon public' (aquela bem longa) não foi encontrada ou é inválida.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
-        // Cadastro
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password: password,
         });
         if (error) throw error;
-        setErrorMsg("Conta criada! Verifique seu e-mail para confirmar (ou tente entrar se a confirmação estiver desativada).");
+        setErrorMsg("Conta criada! Tente fazer login agora.");
         setIsSignUp(false);
       } else {
-        // Login
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password,
         });
         if (error) throw error;
-        // O App.tsx vai detectar a mudança de sessão automaticamente
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || "Ocorreu um erro na autenticação.");
+      if (err.message === 'Invalid API key' || err.status === 401) {
+        setErrorMsg("Chave API Inválida: Use a chave 'anon' (JWT) encontrada em Settings > API no Supabase.");
+      } else {
+        setErrorMsg(err.message || "Erro ao acessar. Verifique seus dados.");
+      }
     } finally {
       setIsLoading(false);
     }
