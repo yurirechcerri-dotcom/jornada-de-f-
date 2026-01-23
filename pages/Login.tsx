@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import AppLogo from '../components/AppLogo';
 
 interface LoginProps {
@@ -10,6 +10,16 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    // Simula um pequeno delay para feedback visual
+    setTimeout(() => {
+      onLogin();
+    }, 600);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#FDFCF8] flex flex-col items-center justify-center overflow-hidden">
@@ -40,7 +50,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           transition={{ delay: 0.2 }}
           className="bg-white p-8 rounded-[3rem] shadow-2xl border border-[#C2A385]/10"
         >
-          {/* Important Info Badge for Buyers */}
           <div className="mb-8 p-4 bg-[#FDFCF8] border border-[#C2A385]/10 rounded-2xl flex items-start gap-3 text-left">
             <ShieldCheck size={18} className="text-[#C2A385] shrink-0" />
             <p className="text-[10px] text-[#2C3E50]/60 font-bold uppercase leading-tight tracking-tight">
@@ -67,11 +76,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             
             <button 
-              onClick={onLogin}
-              className="w-full bg-[#C2A385] text-white py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-[#C2A385]/20 flex items-center justify-center gap-3 hover:bg-[#B19274] transition-all active:scale-95"
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className={`w-full bg-[#C2A385] text-white py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-[#C2A385]/20 flex items-center justify-center gap-3 transition-all active:scale-95 ${isLoading ? 'opacity-70 cursor-wait' : 'hover:bg-[#B19274]'}`}
             >
-              {isLogin ? 'Iniciar minha Jornada' : 'Criar minha Conta'}
-              <ArrowRight size={18} />
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Conectando...
+                </>
+              ) : (
+                <>
+                  {isLogin ? 'Iniciar minha Jornada' : 'Criar minha Conta'}
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </div>
 
