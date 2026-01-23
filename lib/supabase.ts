@@ -1,22 +1,23 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Função ultra-segura para ler variáveis de ambiente sem quebrar o runtime
-const safeGetEnv = (key: string): string | undefined => {
+const getEnv = (key: string): string => {
   try {
-    return (window as any).process?.env?.[key] || (process as any)?.env?.[key];
-  } catch (e) {
-    return undefined;
+    // Tenta pegar do process.env (Vercel) ou do import.meta.env (Vite local)
+    return (process.env[key] || (import.meta as any).env?.[key] || '');
+  } catch {
+    return '';
   }
 };
 
-const supabaseUrl = safeGetEnv('SUPABASE_URL') || 'https://placeholder.supabase.co';
-const supabaseKey = safeGetEnv('SUPABASE_ANON_KEY') || 'placeholder-key';
+const supabaseUrl = getEnv('SUPABASE_URL') || 'https://placeholder.supabase.co';
+const supabaseKey = getEnv('SUPABASE_ANON_KEY') || 'placeholder-key';
 
-// O cliente é criado. Se as chaves forem as de placeholder, as chamadas falharão graciosamente,
-// mas o aplicativo (UI) continuará funcionando e carregando.
+// O app não vai dar tela branca mesmo se o Supabase estiver desconfigurado
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const isSupabaseConfigured = () => {
-  return supabaseUrl !== 'https://placeholder.supabase.co' && supabaseKey !== 'placeholder-key';
+  return supabaseUrl !== 'https://placeholder.supabase.co' && 
+         supabaseKey !== 'placeholder-key' &&
+         supabaseUrl.length > 10;
 };
