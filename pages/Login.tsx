@@ -11,14 +11,19 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.MouseEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Login: Tentativa de submissão disparada");
+    
     setIsLoading(true);
-    // Simula um pequeno delay para feedback visual
+    
+    // Simula validação e delay para feedback visual
     setTimeout(() => {
       onLogin();
-    }, 600);
+    }, 500);
   };
 
   return (
@@ -57,11 +62,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </p>
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2C3E50]/30" size={18} />
               <input 
+                required
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="E-mail da sua compra"
                 className="w-full pl-12 pr-4 py-4 bg-[#FDFCF8] rounded-2xl outline-none focus:ring-2 focus:ring-[#C2A385] transition-all border border-gray-100 text-sm font-medium"
               />
@@ -69,15 +77,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2C3E50]/30" size={18} />
               <input 
+                required
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Sua senha"
                 className="w-full pl-12 pr-4 py-4 bg-[#FDFCF8] rounded-2xl outline-none focus:ring-2 focus:ring-[#C2A385] transition-all border border-gray-100 text-sm font-medium"
               />
             </div>
             
             <button 
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={isLoading}
               className={`w-full bg-[#C2A385] text-white py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-[#C2A385]/20 flex items-center justify-center gap-3 transition-all active:scale-95 ${isLoading ? 'opacity-70 cursor-wait' : 'hover:bg-[#B19274]'}`}
             >
@@ -93,13 +103,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </>
               )}
             </button>
-          </div>
+          </form>
 
           <div className="mt-6 flex items-center justify-between text-[9px] font-black text-[#2C3E50]/40 uppercase tracking-widest">
-            <button onClick={() => setIsLogin(!isLogin)}>
+            <button type="button" onClick={() => setIsLogin(!isLogin)}>
               {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Login'}
             </button>
-            <button>Esqueci a senha</button>
+            <button type="button">Esqueci a senha</button>
           </div>
         </motion.div>
 

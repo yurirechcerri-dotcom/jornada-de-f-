@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -10,18 +10,14 @@ import PrayerWall from './pages/PrayerWall';
 import Login from './pages/Login';
 import ThankYou from './pages/ThankYou';
 import { notificationService } from './services/notificationService';
-import { Bell, BellOff, Clock, Download, Sparkles, LogOut } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LogOut } from 'lucide-react';
 
 const ProfilePage = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [notificationTime, setNotificationTime] = useState('07:00');
 
   useEffect(() => {
     const savedEnabled = localStorage.getItem('notifications_enabled') === 'true';
-    const savedTime = localStorage.getItem('notification_time') || '07:00';
     setNotificationsEnabled(savedEnabled);
-    setNotificationTime(savedTime);
   }, []);
 
   const toggleNotifications = async () => {
@@ -86,24 +82,22 @@ const App: React.FC = () => {
     return localStorage.getItem('is_authenticated') === 'true';
   });
 
-  const handleLogin = () => {
-    console.log("Login acionado com sucesso");
+  const handleLogin = useCallback(() => {
+    console.log("App: Login autenticado com sucesso");
     localStorage.setItem('is_authenticated', 'true');
     setIsAuthenticated(true);
-  };
+  }, []);
 
   return (
     <HashRouter>
       <Routes>
-        {/* Se estiver logado, /login redireciona para / */}
         <Route 
           path="/login" 
           element={isAuthenticated ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />} 
         />
-        
         <Route path="/thank-you" element={<ThankYou />} />
-
-        {/* Rotas Protegidas */}
+        
+        {/* Rotas Protegidas agrupadas */}
         <Route 
           path="/*" 
           element={
