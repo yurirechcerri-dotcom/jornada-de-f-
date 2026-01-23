@@ -1,18 +1,20 @@
+
 {
   "short_name": "JornadaFé",
   "name": "Jornada de Fé: Caminhada Diária",
   "description": "Seu aplicativo de devocional e crescimento espiritual diário.",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQyIiByPSIzMiIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjAuOCIgc3Ryb2tlLWRhc2hhcnJheT0iMiA0IiBvcGFjaXR5PSIwLjMiLz48cGF0aCBkPSJNMjUgODAgTDUwIDQyIEw3NSA4MCBIMjVaIiBzdHJva2U9IiNDMkEzODUiIHN0cm9rZS13aWR0aD0iMS4yIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTUwIDM0IFY3MiIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTQwIDUyIEg2MCIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSIzMCIgcj0iNSIgZmlsbD0iI0MyQTM4NSIvPjwvc3ZnPg==",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=512&h=512&auto=format&fit=crop",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQyIiByPSIzMiIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjAuOCIgc3Ryb2tlLWRhc2hhcnJheT0iMiA0IiBvcGFjaXR5PSIwLjMiLz48cGF0aCBkPSJNMjUgODAgTDUwIDQyIEw3NSA4MCBIMjVaIiBzdHJva2U9IiNDMkEzODUiIHN0cm9rZS13aWR0aD0iMS4yIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTUwIDM0IFY3MiIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTQwIDUyIEg2MCIgc3Ryb2tlPSIjQzJBMzg1IiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSIzMCIgcj0iNSIgZmlsbD0iI0MyQTM4NSIvPjwvc3ZnPg==",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/#/",
