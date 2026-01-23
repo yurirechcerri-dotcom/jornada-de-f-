@@ -1,29 +1,35 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// No Vite, variáveis de ambiente devem começar com VITE_
 const getEnv = (key: string): string => {
   const env = (import.meta as any).env;
   const proc = (window as any).process?.env;
-  
-  return env?.[`VITE_${key}`] || env?.[key] || proc?.[`VITE_${key}`] || proc?.[key] || '';
+  return (env?.[`VITE_${key}`] || env?.[key] || proc?.[`VITE_${key}`] || proc?.[key] || '').trim();
 };
 
-const supabaseUrl = getEnv('SUPABASE_URL') || 'https://fttsxnetcgqqnnotuori.supabase.co';
+const rawUrl = getEnv('SUPABASE_URL');
+const rawKey = getEnv('SUPABASE_ANON_KEY');
 
-/**
- * IMPORTANTE: O erro "supabaseKey is required" ocorre quando esta variável é uma string vazia.
- * Se você não configurou a variável de ambiente VITE_SUPABASE_ANON_KEY, 
- * a aplicação usará o valor abaixo como fallback para evitar o crash inicial.
- */
-const supabaseKey = getEnv('SUPABASE_ANON_KEY') || 'd0c48b5f-5a3e-4a5f-bd15-e6c1214f30f7';
+// Só tenta configurar se as chaves parecerem reais
+const isConfigured = rawUrl.startsWith('http') && rawKey.length > 60;
 
-// Inicializa o cliente. Se a chave acima não for um JWT válido, 
-// as chamadas de API retornarão 401 (Unauthorized), que tratamos na tela de Login.
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(
+  isConfigured ? rawUrl : 'https://placeholder.supabase.co',
+  isConfigured ? rawKey : 'placeholder-key'
+);
 
-export const isSupabaseConfigured = () => {
-  // Uma chave anon válida do Supabase (JWT) é muito longa (geralmente > 100 caracteres).
-  // A chave 'd0c48b5f...' é apenas o ID do projeto e não serve para autenticação.
-  return supabaseKey.length > 50;
+export const isSupabaseConfigured = () => isConfigured;
+
+// Helper para gerenciar sessão local quando o Supabase falha
+export const getLocalSession = () => {
+  const session = localStorage.getItem('jdf_local_session');
+  return session ? JSON.parse(session) : null;
+};
+
+export const setLocalSession = (user: any) => {
+  localStorage.setItem('jdf_local_session', JSON.stringify({ user, expires_at: Date.now() + 1000 * 60 * 60 * 24 * 30 }));
+};
+
+export const clearLocalSession = () => {
+  localStorage.removeItem('jdf_local_session');
 };

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured, getLocalSession, clearLocalSession } from './lib/supabase';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import JourneyList from './pages/JourneyList';
@@ -13,10 +13,12 @@ import ThankYou from './pages/ThankYou';
 import { LogOut, ShieldCheck, Heart, User } from 'lucide-react';
 
 const ProfilePage = () => {
-  const [userData, setUserData] = useState<any>(JSON.parse(localStorage.getItem('user_data') || '{}'));
+  const [userData, setUserData] = useState<any>(() => JSON.parse(localStorage.getItem('user_data') || '{}'));
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!isSupabaseConfigured()) return; // Se for local, não busca do Supabase
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -35,7 +37,10 @@ const ProfilePage = () => {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured()) {
+      await supabase.auth.signOut();
+    }
+    clearLocalSession();
     localStorage.clear();
     window.location.reload();
   };
@@ -96,18 +101,34 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Pegar sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    const checkAuth = async () => {
+      // 1. Tenta pegar a sessão do Supabase (se configurado)
+      if (isSupabaseConfigured()) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setSession(session);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Se não tiver Supabase ou sessão lá, tenta a Local
+      const local = getLocalSession();
+      if (local) {
+        setSession(local);
+      }
       setLoading(false);
-    });
+    };
 
-    // Escutar mudanças na auth (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    checkAuth();
 
-    return () => subscription.unsubscribe();
+    // Ouvinte do Supabase (se disponível)
+    if (isSupabaseConfigured()) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) setSession(session);
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   if (loading) return null;

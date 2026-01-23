@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, UserPlus, LogIn } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { Mail, Lock, Loader2, AlertCircle, UserPlus, LogIn } from 'lucide-react';
+import { supabase, isSupabaseConfigured, setLocalSession } from '../lib/supabase';
 import AppLogo from '../components/AppLogo';
 
 const Login: React.FC = () => {
@@ -17,36 +17,44 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Verificação preventiva de configuração
+    // MODO LOCAL (Fallback caso o Supabase não esteja pronto)
     if (!isSupabaseConfigured()) {
-      setErrorMsg("Erro de Configuração: A chave 'anon public' (aquela bem longa) não foi encontrada ou é inválida.");
-      setIsLoading(false);
+      setTimeout(() => {
+        const mockUser = {
+          id: btoa(email),
+          email: email.trim(),
+          display_name: email.split('@')[0],
+          is_local: true
+        };
+        setLocalSession(mockUser);
+        localStorage.setItem('user_data', JSON.stringify(mockUser));
+        setIsLoading(false);
+        // Recarrega para o App.tsx pegar a nova sessão
+        window.location.reload();
+      }, 800);
       return;
     }
 
+    // MODO SUPABASE REAL
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password,
+        const { error } = await supabase.auth.signUp({ 
+          email: email.trim(), 
+          password,
+          options: { data: { display_name: email.split('@')[0] } }
         });
         if (error) throw error;
-        setErrorMsg("Conta criada! Tente fazer login agora.");
+        setErrorMsg("Conta criada! Verifique seu e-mail.");
         setIsSignUp(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password,
+        const { error } = await supabase.auth.signInWithPassword({ 
+          email: email.trim(), 
+          password 
         });
         if (error) throw error;
       }
     } catch (err: any) {
-      console.error(err);
-      if (err.message === 'Invalid API key' || err.status === 401) {
-        setErrorMsg("Chave API Inválida: Use a chave 'anon' (JWT) encontrada em Settings > API no Supabase.");
-      } else {
-        setErrorMsg(err.message || "Erro ao acessar. Verifique seus dados.");
-      }
+      setErrorMsg(err.message || "Erro ao conectar. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -81,9 +89,6 @@ const Login: React.FC = () => {
             <h2 className="font-serif text-2xl text-[#2C3E50]">
               {isSignUp ? 'Criar Nova Conta' : 'Bem-vindo de volta'}
             </h2>
-            <p className="text-[10px] text-[#2C3E50]/40 font-bold uppercase tracking-widest mt-1">
-              {isSignUp ? 'Inicie sua jornada espiritual hoje' : 'Acesse seu devocional diário'}
-            </p>
           </div>
 
           <AnimatePresence mode="wait">
@@ -92,10 +97,10 @@ const Login: React.FC = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className={`mb-6 p-4 rounded-2xl flex items-start gap-3 text-left ${errorMsg.includes('criada') ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'}`}
+                className="mb-6 p-4 rounded-2xl bg-red-50 text-red-600 border border-red-100 flex items-start gap-3 text-left"
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <p className="text-[11px] font-bold leading-tight">{errorMsg}</p>
+                <p className="text-[10px] font-bold leading-tight">{errorMsg}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -149,11 +154,7 @@ const Login: React.FC = () => {
               }}
               className="text-[#C2A385] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:underline"
             >
-              {isSignUp ? (
-                <>Já tenho uma conta <LogIn size={12} /></>
-              ) : (
-                <>Não tenho conta, quero cadastrar <UserPlus size={12} /></>
-              )}
+              {isSignUp ? "Já tenho uma conta" : "Não tenho conta, quero cadastrar"}
             </button>
           </div>
         </motion.div>
