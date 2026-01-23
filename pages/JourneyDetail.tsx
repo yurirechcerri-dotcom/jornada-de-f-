@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
@@ -16,7 +17,9 @@ const JourneyDetail: React.FC = () => {
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [taskChecked, setTaskChecked] = useState(false);
 
-  const mockUserId = "user-123";
+  // Obtém ID real do usuário
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+  const userId = userData.id || userData.email;
 
   // Hooks de animação devem estar no TOPO absoluto e SEMPRE rodar antes de qualquer 'if'
   const springProgress = useSpring(0, { stiffness: 60, damping: 20 });
@@ -26,11 +29,11 @@ const JourneyDetail: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      if (!journeyId) return;
+      if (!journeyId || !userId) return;
       
       try {
         const items = await contentService.getJourneyContent(journeyId);
-        const done = await trackingService.getCompletions(mockUserId);
+        const done = await trackingService.getCompletions(userId);
         
         if (isMounted) {
           setContent(items);
@@ -44,7 +47,7 @@ const JourneyDetail: React.FC = () => {
     };
     load();
     return () => { isMounted = false; };
-  }, [journeyId]);
+  }, [journeyId, userId]);
 
   // Sincroniza o progresso visual sempre que os dados mudam
   useEffect(() => {
@@ -75,10 +78,10 @@ const JourneyDetail: React.FC = () => {
   };
 
   const handleComplete = async (contentId: string) => {
-    if (!taskChecked) return;
+    if (!taskChecked || !userId) return;
     setIsCelebrating(true);
-    await trackingService.completeDay(mockUserId, contentId);
-    const done = await trackingService.getCompletions(mockUserId);
+    await trackingService.completeDay(userId, contentId);
+    const done = await trackingService.getCompletions(userId);
     setCompletions(done);
     setTimeout(() => {
       setIsCelebrating(false);

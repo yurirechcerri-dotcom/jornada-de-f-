@@ -18,6 +18,10 @@ const MorningRitual: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(120);
   const [isTimerActive, setIsTimerActive] = useState(false);
 
+  // Obtém ID real do usuário
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+  const userId = userData.id || userData.email;
+
   useEffect(() => {
     let interval: any;
     if (isTimerActive && timeLeft > 0) {
@@ -35,8 +39,8 @@ const MorningRitual: React.FC = () => {
   };
 
   const handleFinish = async () => {
-    const mockUserId = "user-123";
-    await trackingService.completeDay(mockUserId, 'morning-ritual-daily', intention);
+    if (!userId) return;
+    await trackingService.completeDay(userId, 'morning-ritual-daily', intention);
     alert("Ritual concluído! Tenha um dia abençoado.");
     window.location.hash = "#/";
   };

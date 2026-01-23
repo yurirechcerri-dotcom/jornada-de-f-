@@ -10,42 +10,35 @@ import { UserTracking } from '../types';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Dados de fallback imediatos para evitar telas vazias
+  const [dailyVerse] = useState<DailyVerse>(() => getVerseOfTheDay() || { text: "Buscai ao Senhor enquanto se pode achar.", reference: "Isaías 55:6" });
+  const [readingPlans] = useState<ReadingPlan[]>(() => inspirationService.getReadingPlans());
+  const [media] = useState<InspiringMedia[]>(() => inspirationService.getMedia());
+  const [motivationalMessage] = useState<string>(() => {
+    const msgs = inspirationService.getMotivationalMessages();
+    return msgs[Math.floor(Math.random() * msgs.length)] || "Deus é fiel.";
+  });
+
   const [completions, setCompletions] = useState<UserTracking[]>([]);
-  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
-  const [motivationalMessage, setMotivationalMessage] = useState('');
-  const [readingPlans, setReadingPlans] = useState<ReadingPlan[]>([]);
-  const [media, setMedia] = useState<InspiringMedia[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<InspiringMedia | null>(null);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   
-  const mockUserId = "user-123";
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+  const userId = userData.id || userData.email;
 
   useEffect(() => {
-    const loadData = async () => {
-      const tracking = await trackingService.getCompletions(mockUserId);
-      setCompletions(tracking);
-      setDailyVerse(getVerseOfTheDay());
-      
-      const messages = inspirationService.getMotivationalMessages();
-      setMotivationalMessage(messages[Math.floor(Math.random() * messages.length)]);
-      
-      setReadingPlans(inspirationService.getReadingPlans());
-      setMedia(inspirationService.getMedia());
+    const loadProgress = async () => {
+      if (!userId) return;
+      try {
+        const tracking = await trackingService.getCompletions(userId);
+        setCompletions(tracking);
+      } catch (e) {
+        console.error("Erro ao carregar progresso", e);
+      }
     };
-    loadData();
-  }, []);
-
-  const handleImageLoad = (id: string) => {
-    setLoadedImages(prev => ({ ...prev, [id]: true }));
-  };
-
-  const handleImageError = (id: string) => {
-    setFailedImages(prev => ({ ...prev, [id]: true }));
-    setLoadedImages(prev => ({ ...prev, [id]: true }));
-  };
-
-  const totalPrayers = completions.length;
+    loadProgress();
+  }, [userId]);
 
   return (
     <motion.div 
@@ -55,15 +48,16 @@ const Home: React.FC = () => {
     >
       <header className="flex items-center justify-between">
         <div className="space-y-1">
-          <p className="text-[#C2A385] text-xs font-bold uppercase tracking-[0.2em]">Paz seja convosco</p>
+          <p className="text-[#C2A385] text-xs font-bold uppercase tracking-[0.2em]">Paz seja convosco, {userData.display_name?.split(' ')[0] || 'Viajante'}</p>
           <h1 className="font-serif text-3xl text-[#2C3E50]">Jornada de Fé</h1>
         </div>
         <div className="bg-white border border-[#C2A385]/20 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-sm">
           <Flame size={14} className="text-[#C2A385]" fill="currentColor" />
-          <span className="text-xs font-black text-[#2C3E50]">{totalPrayers}</span>
+          <span className="text-xs font-black text-[#2C3E50]">{completions.length}</span>
         </div>
       </header>
 
+      {/* Semente Diária - Garantido */}
       <motion.section 
         whileTap={{ scale: 0.98 }}
         onClick={() => navigate('/prayer')}
@@ -76,17 +70,18 @@ const Home: React.FC = () => {
               <Sparkles size={16} />
             </div>
             <p className="font-serif text-3xl italic leading-tight">
-              "{dailyVerse?.text}"
+              "{dailyVerse.text}"
             </p>
             <div className="flex items-center gap-3">
               <div className="h-px w-8 bg-white/30" />
-              <span className="text-xs font-serif italic opacity-80">{dailyVerse?.reference}</span>
+              <span className="text-xs font-serif italic opacity-80">{dailyVerse.reference}</span>
             </div>
           </div>
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
         </div>
       </motion.section>
 
+      {/* Botão de Ritual Matinal */}
       <section 
         onClick={() => navigate('/morning')}
         className="bg-white p-6 rounded-[2.5rem] border border-[#C2A385]/10 shadow-sm flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-all"
@@ -103,6 +98,7 @@ const Home: React.FC = () => {
         <ChevronRight size={18} className="text-gray-300 group-hover:text-[#C2A385] transition-colors" />
       </section>
 
+      {/* Planos de Leitura */}
       <section className="space-y-5">
         <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2">
           <BookOpen size={20} className="text-[#C2A385]" />
@@ -117,27 +113,15 @@ const Home: React.FC = () => {
               className="min-w-[220px] bg-white rounded-[2.5rem] border border-[#C2A385]/10 p-4 shadow-sm space-y-4 cursor-pointer"
             >
               <div className="h-32 rounded-[2rem] overflow-hidden relative bg-[#C2A385]/5">
-                {failedImages[plan.id] ? (
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#C2A385]/20 to-[#C2A385]/40 flex items-center justify-center">
-                    <BookOpen className="text-[#C2A385]/40" size={32} />
-                  </div>
-                ) : (
-                  <>
-                    {!loadedImages[plan.id] && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 animate-pulse" />
-                    )}
-                    <img 
-                      src={plan.image} 
-                      className={`w-full h-full object-cover transition-opacity duration-500 ${loadedImages[plan.id] ? 'opacity-100' : 'opacity-0'}`} 
-                      alt={plan.title} 
-                      onLoad={() => handleImageLoad(plan.id)}
-                      onError={() => handleImageError(plan.id)}
-                    />
-                  </>
-                )}
+                <img 
+                  src={plan.image} 
+                  className={`w-full h-full object-cover transition-opacity duration-500 ${loadedImages[plan.id] ? 'opacity-100' : 'opacity-30'}`} 
+                  alt={plan.title} 
+                  onLoad={() => setLoadedImages(p => ({...p, [plan.id]: true}))}
+                />
               </div>
-              <div>
-                <h4 className="font-serif text-lg text-[#2C3E50]">{plan.title}</h4>
+              <div className="px-1">
+                <h4 className="font-serif text-lg text-[#2C3E50] truncate">{plan.title}</h4>
                 <div className="mt-3 flex items-center gap-3">
                   <div className="h-1 flex-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-[#C2A385]" style={{ width: `${plan.progress}%` }} />
@@ -150,6 +134,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Galeria Inspiradora */}
       <section className="space-y-5">
         <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2">
           <ImageIcon size={20} className="text-[#C2A385]" />
@@ -163,30 +148,16 @@ const Home: React.FC = () => {
               onClick={() => setSelectedMedia(item)}
               className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden group shadow-md cursor-pointer bg-[#C2A385]/10 border border-[#C2A385]/5"
             >
-              {failedImages[item.id] ? (
-                <div className="absolute inset-0 bg-gradient-to-t from-[#C2A385]/40 to-[#C2A385]/10 flex items-center justify-center">
-                  <ImageIcon className="text-white/40" size={24} />
-                </div>
-              ) : (
-                <>
-                  {!loadedImages[item.id] && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#C2A385]/10 to-[#C2A385]/20 animate-pulse" />
-                  )}
-                  <img 
-                    src={item.url} 
-                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-0'}`} 
-                    alt={item.title}
-                    onLoad={() => handleImageLoad(item.id)}
-                    onError={() => handleImageError(item.id)}
-                  />
-                </>
-              )}
+              <img 
+                src={item.url} 
+                className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-30'}`} 
+                alt={item.title}
+                onLoad={() => setLoadedImages(p => ({...p, [item.id]: true}))}
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60" />
-              
               <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-xl text-white">
                 {item.type === 'video' ? <Play size={12} fill="currentColor" /> : <ImageIcon size={12} />}
               </div>
-
               <div className="absolute bottom-5 left-5 right-5 space-y-1">
                 <span className="text-[8px] font-bold text-[#C2A385] uppercase tracking-widest">{item.category}</span>
                 <h5 className="text-white text-[10px] font-bold uppercase tracking-tight leading-tight">{item.title}</h5>
@@ -211,13 +182,7 @@ const Home: React.FC = () => {
               className="w-full max-w-sm aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl relative bg-white"
               onClick={(e) => e.stopPropagation()}
             >
-              {failedImages[selectedMedia.id] ? (
-                <div className="w-full h-full bg-gradient-to-br from-[#C2A385] to-[#B19274] flex items-center justify-center">
-                   <Sparkles className="text-white/20" size={64} />
-                </div>
-              ) : (
-                <img src={selectedMedia.url} className="w-full h-full object-cover" alt={selectedMedia.title} />
-              )}
+              <img src={selectedMedia.url} className="w-full h-full object-cover" alt={selectedMedia.title} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-10 space-y-4">
                 <span className="text-[#C2A385] text-[10px] font-black uppercase tracking-[0.4em]">{selectedMedia.category}</span>
                 <h3 className="text-white font-serif text-3xl">{selectedMedia.title}</h3>
@@ -226,7 +191,7 @@ const Home: React.FC = () => {
                 </p>
                 <button 
                   onClick={() => setSelectedMedia(null)}
-                  className="mt-6 py-4 bg-white text-[#2C3E50] rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl"
+                  className="mt-6 py-4 bg-white text-[#2C3E50] rounded-2xl font-bold uppercase tracking-widest text-[10px]"
                 >
                   Fechar
                 </button>
