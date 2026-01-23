@@ -1,18 +1,20 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Função auxiliar para obter variáveis de ambiente com segurança no navegador
-const getEnv = (key: string): string | undefined => {
+// Função ultra-segura para ler variáveis de ambiente sem quebrar o runtime
+const safeGetEnv = (key: string): string | undefined => {
   try {
-    return (process as any).env[key];
+    return (window as any).process?.env?.[key] || (process as any)?.env?.[key];
   } catch (e) {
     return undefined;
   }
 };
 
-const supabaseUrl = (getEnv('SUPABASE_URL') || 'https://placeholder.supabase.co') as string;
-const supabaseKey = (getEnv('SUPABASE_ANON_KEY') || 'placeholder-key') as string;
+const supabaseUrl = safeGetEnv('SUPABASE_URL') || 'https://placeholder.supabase.co';
+const supabaseKey = safeGetEnv('SUPABASE_ANON_KEY') || 'placeholder-key';
 
+// O cliente é criado. Se as chaves forem as de placeholder, as chamadas falharão graciosamente,
+// mas o aplicativo (UI) continuará funcionando e carregando.
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const isSupabaseConfigured = () => {

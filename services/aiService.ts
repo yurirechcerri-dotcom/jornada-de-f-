@@ -1,9 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const getApiKey = (): string => {
+const safeGetApiKey = (): string => {
   try {
-    return (process as any).env.API_KEY || '';
+    return (window as any).process?.env?.API_KEY || (process as any)?.env?.API_KEY || '';
   } catch (e) {
     return '';
   }
@@ -11,7 +11,7 @@ const getApiKey = (): string => {
 
 export const aiService = {
   async generateLogo(): Promise<string | null> {
-    const apiKey = getApiKey();
+    const apiKey = safeGetApiKey();
     if (!apiKey) return null;
 
     try {
