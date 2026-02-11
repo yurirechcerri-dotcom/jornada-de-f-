@@ -9,7 +9,6 @@ export interface BibleChapter {
 }
 
 const BIBLE_BOOKS: BibleBook[] = [
-  // Antigo Testamento (Amostra - os principais para estrutura)
   { id: 'gen', name: 'Gênesis', abbreviation: 'Gn', chapters: 50, testament: 'old' },
   { id: 'exo', name: 'Êxodo', abbreviation: 'Ex', chapters: 40, testament: 'old' },
   { id: 'lev', name: 'Levítico', abbreviation: 'Lv', chapters: 27, testament: 'old' },
@@ -21,7 +20,6 @@ const BIBLE_BOOKS: BibleBook[] = [
   { id: '1sa', name: '1 Samuel', abbreviation: '1Sm', chapters: 31, testament: 'old' },
   { id: 'psa', name: 'Salmos', abbreviation: 'Sl', chapters: 150, testament: 'old' },
   { id: 'pro', name: 'Provérbios', abbreviation: 'Pv', chapters: 31, testament: 'old' },
-  // Novo Testamento
   { id: 'mat', name: 'Mateus', abbreviation: 'Mt', chapters: 28, testament: 'new' },
   { id: 'mar', name: 'Marcos', abbreviation: 'Mc', chapters: 16, testament: 'new' },
   { id: 'luc', name: 'Lucas', abbreviation: 'Lc', chapters: 24, testament: 'new' },
@@ -31,13 +29,29 @@ const BIBLE_BOOKS: BibleBook[] = [
   { id: 'rev', name: 'Apocalipse', abbreviation: 'Ap', chapters: 22, testament: 'new' },
 ];
 
+/**
+ * Função utilitária para extrair e validar JSON de respostas da IA
+ */
+const extractJSON = (text: string | undefined) => {
+  if (!text) return null;
+  try {
+    // Tenta encontrar o conteúdo entre chaves caso a IA mande markdown
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const cleanJson = jsonMatch ? jsonMatch[0] : text;
+    return JSON.parse(cleanJson);
+  } catch (e) {
+    console.error("Erro ao parsear JSON da Bíblia:", e, text);
+    return null;
+  }
+};
+
 export const bibleService = {
   getBooks() {
     return BIBLE_BOOKS;
   },
 
   async getChapterText(bookName: string, chapter: number): Promise<BibleChapter | null> {
-    const cacheKey = `bible_chapter_${bookName}_${chapter}`;
+    const cacheKey = `bible_chapter_${bookName.toLowerCase()}_${chapter}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -45,17 +59,22 @@ export const bibleService = {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Retorne o texto completo do capítulo ${chapter} do livro de ${bookName} (Versão Almeida Revista e Atualizada). 
-        Formate como um JSON estruturado: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}, ...]}. 
-        Retorne APENAS o JSON.`,
-        config: { responseMimeType: "application/json" }
+        contents: `Aja como uma API de Bíblia. Forneça o texto completo do capítulo ${chapter} de ${bookName} na versão Almeida Revista e Atualizada. 
+        Retorne estritamente um JSON neste formato: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}.
+        Certifique-se de incluir todos os versículos do capítulo.`,
+        config: { 
+          responseMimeType: "application/json"
+        }
       });
 
-      const result = JSON.parse(response.text);
-      localStorage.setItem(cacheKey, JSON.stringify(result));
-      return result;
+      const result = extractJSON(response.text);
+      if (result && result.verses) {
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        return result;
+      }
+      return null;
     } catch (error) {
-      console.error("Erro ao carregar capítulo:", error);
+      console.error("Erro crítico ao carregar capítulo:", error);
       return null;
     }
   },
@@ -65,10 +84,13 @@ export const bibleService = {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Encontre o versículo para: "${query}". Retorne JSON: {"text": "...", "reference": "...", "context": "..."}`,
+        contents: `Busque na Bíblia por: "${query}". Retorne um JSON com o versículo mais relevante: {"text": "texto do versículo", "reference": "Livro Cap:Ver", "context": "breve explicação"}. 
+        Se não encontrar, retorne null.`,
         config: { responseMimeType: "application/json" }
       });
-      return JSON.parse(response.text);
-    } catch (e) { return null; }
+      return extractJSON(response.text);
+    } catch (e) { 
+      return null; 
+    }
   }
 };
