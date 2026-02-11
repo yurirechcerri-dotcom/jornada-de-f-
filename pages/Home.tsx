@@ -1,51 +1,31 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { trackingService } from '../services/trackingService';
-import { getVerseOfTheDay, DailyVerse } from '../services/verseService';
-import { inspirationService, InspiringMedia, ReadingPlan } from '../services/inspirationService';
+import { getVerseOfTheDay } from '../services/verseService';
+import { inspirationService } from '../services/inspirationService';
 import { Play, Image as ImageIcon, BookOpen, ChevronRight, Sparkles, Sun, Flame } from 'lucide-react';
-import { UserTracking } from '../types';
+import OptimizedImage from '../components/OptimizedImage';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [completions, setCompletions] = useState([]);
+  const [selectedMedia, setSelectedMedia] = useState(null);
   
-  // Dados de fallback imediatos para evitar telas vazias
-  const [dailyVerse] = useState<DailyVerse>(() => getVerseOfTheDay() || { text: "Buscai ao Senhor enquanto se pode achar.", reference: "Isaías 55:6" });
-  const [readingPlans] = useState<ReadingPlan[]>(() => inspirationService.getReadingPlans());
-  const [media] = useState<InspiringMedia[]>(() => inspirationService.getMedia());
-  const [motivationalMessage] = useState<string>(() => {
-    const msgs = inspirationService.getMotivationalMessages();
-    return msgs[Math.floor(Math.random() * msgs.length)] || "Deus é fiel.";
-  });
-
-  const [completions, setCompletions] = useState<UserTracking[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<InspiringMedia | null>(null);
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
-  
-  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+  const dailyVerse = useMemo(() => getVerseOfTheDay(), []);
+  const readingPlans = useMemo(() => inspirationService.getReadingPlans(), []);
+  const media = useMemo(() => inspirationService.getMedia(), []);
+  const userData = useMemo(() => JSON.parse(localStorage.getItem('user_data') || '{}'), []);
   const userId = userData.id || userData.email;
 
   useEffect(() => {
-    const loadProgress = async () => {
-      if (!userId) return;
-      try {
-        const tracking = await trackingService.getCompletions(userId);
-        setCompletions(tracking);
-      } catch (e) {
-        console.error("Erro ao carregar progresso", e);
-      }
-    };
-    loadProgress();
+    if (!userId) return;
+    trackingService.getCompletions(userId).then(setCompletions).catch(console.error);
   }, [userId]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-10 pb-40"
-    >
+    <div className="space-y-10 pb-40">
       <header className="flex items-center justify-between">
         <div className="space-y-1">
           <p className="text-[#C2A385] text-xs font-bold uppercase tracking-[0.2em]">Paz seja convosco, {userData.display_name?.split(' ')[0] || 'Viajante'}</p>
@@ -57,11 +37,10 @@ const Home: React.FC = () => {
         </div>
       </header>
 
-      {/* Semente Diária - Garantido */}
       <motion.section 
         whileTap={{ scale: 0.98 }}
         onClick={() => navigate('/prayer')}
-        className="relative cursor-pointer group"
+        className="relative cursor-pointer"
       >
         <div className="bg-[#C2A385] p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
           <div className="relative z-10 space-y-6">
@@ -69,99 +48,40 @@ const Home: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Semente Diária</span>
               <Sparkles size={16} />
             </div>
-            <p className="font-serif text-3xl italic leading-tight">
-              "{dailyVerse.text}"
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="h-px w-8 bg-white/30" />
-              <span className="text-xs font-serif italic opacity-80">{dailyVerse.reference}</span>
-            </div>
+            <p className="font-serif text-3xl italic leading-tight">"{dailyVerse.text}"</p>
+            <span className="text-xs font-serif italic opacity-80">— {dailyVerse.reference}</span>
           </div>
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
         </div>
       </motion.section>
 
-      {/* Botão de Ritual Matinal */}
-      <section 
-        onClick={() => navigate('/morning')}
-        className="bg-white p-6 rounded-[2.5rem] border border-[#C2A385]/10 shadow-sm flex items-center justify-between group cursor-pointer active:scale-[0.98] transition-all"
-      >
+      <section onClick={() => navigate('/morning')} className="bg-white p-6 rounded-[2.5rem] border border-[#C2A385]/10 shadow-sm flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all">
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-[#FDFCF8] rounded-2xl flex items-center justify-center text-[#C2A385] border border-[#C2A385]/10 group-hover:bg-[#C2A385] group-hover:text-white transition-all">
-            <Sun size={24} />
-          </div>
-          <div>
-            <h3 className="font-serif text-xl text-[#2C3E50]">Ritual Matinal</h3>
-            <p className="text-[9px] font-bold text-[#C2A385] uppercase tracking-widest">Foco e conexão</p>
-          </div>
+          <div className="w-14 h-14 bg-[#FDFCF8] rounded-2xl flex items-center justify-center text-[#C2A385] border border-[#C2A385]/10"><Sun size={24} /></div>
+          <div><h3 className="font-serif text-xl text-[#2C3E50]">Ritual Matinal</h3><p className="text-[9px] font-bold text-[#C2A385] uppercase tracking-widest">Foco e conexão</p></div>
         </div>
-        <ChevronRight size={18} className="text-gray-300 group-hover:text-[#C2A385] transition-colors" />
+        <ChevronRight size={18} className="text-gray-300" />
       </section>
 
-      {/* Planos de Leitura */}
       <section className="space-y-5">
-        <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2">
-          <BookOpen size={20} className="text-[#C2A385]" />
-          Planos de Leitura
-        </h2>
+        <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2"><BookOpen size={20} className="text-[#C2A385]" /> Planos de Leitura</h2>
         <div className="flex gap-5 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
           {readingPlans.map((plan) => (
-            <motion.div 
-              key={plan.id} 
-              whileTap={{ scale: 0.96 }}
-              onClick={() => navigate('/journey')}
-              className="min-w-[220px] bg-white rounded-[2.5rem] border border-[#C2A385]/10 p-4 shadow-sm space-y-4 cursor-pointer"
-            >
-              <div className="h-32 rounded-[2rem] overflow-hidden relative bg-[#C2A385]/5">
-                <img 
-                  src={plan.image} 
-                  className={`w-full h-full object-cover transition-opacity duration-500 ${loadedImages[plan.id] ? 'opacity-100' : 'opacity-30'}`} 
-                  alt={plan.title} 
-                  onLoad={() => setLoadedImages(p => ({...p, [plan.id]: true}))}
-                />
-              </div>
-              <div className="px-1">
-                <h4 className="font-serif text-lg text-[#2C3E50] truncate">{plan.title}</h4>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="h-1 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#C2A385]" style={{ width: `${plan.progress}%` }} />
-                  </div>
-                  <span className="text-[8px] font-black text-[#2C3E50]/40">{plan.progress}%</span>
-                </div>
-              </div>
-            </motion.div>
+            <div key={plan.id} onClick={() => navigate('/journey')} className="min-w-[220px] bg-white rounded-[2.5rem] border border-[#C2A385]/10 p-4 shadow-sm space-y-4 cursor-pointer">
+              <OptimizedImage src={plan.image} alt={plan.title} className="h-32 rounded-[2rem]" />
+              <h4 className="font-serif text-lg text-[#2C3E50] truncate px-1">{plan.title}</h4>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Galeria Inspiradora */}
       <section className="space-y-5">
-        <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2">
-          <ImageIcon size={20} className="text-[#C2A385]" />
-          Galeria Inspiradora
-        </h2>
+        <h2 className="font-serif text-2xl text-[#2C3E50] flex items-center gap-2"><ImageIcon size={20} className="text-[#C2A385]" /> Galeria Inspiradora</h2>
         <div className="grid grid-cols-2 gap-4">
           {media.map((item) => (
-            <motion.div 
-              key={item.id}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setSelectedMedia(item)}
-              className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden group shadow-md cursor-pointer bg-[#C2A385]/10 border border-[#C2A385]/5"
-            >
-              <img 
-                src={item.url} 
-                className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-30'}`} 
-                alt={item.title}
-                onLoad={() => setLoadedImages(p => ({...p, [item.id]: true}))}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60" />
-              <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-xl text-white">
-                {item.type === 'video' ? <Play size={12} fill="currentColor" /> : <ImageIcon size={12} />}
-              </div>
-              <div className="absolute bottom-5 left-5 right-5 space-y-1">
-                <span className="text-[8px] font-bold text-[#C2A385] uppercase tracking-widest">{item.category}</span>
-                <h5 className="text-white text-[10px] font-bold uppercase tracking-tight leading-tight">{item.title}</h5>
-              </div>
+            <motion.div key={item.id} whileTap={{ scale: 0.95 }} onClick={() => setSelectedMedia(item)} className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-md cursor-pointer">
+              <OptimizedImage src={item.url} alt={item.title} className="w-full h-full" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5"><h5 className="text-white text-[10px] font-bold uppercase tracking-tight">{item.title}</h5></div>
             </motion.div>
           ))}
         </div>
@@ -169,42 +89,18 @@ const Home: React.FC = () => {
 
       <AnimatePresence>
         {selectedMedia && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[#2C3E50]/90 backdrop-blur-xl flex items-center justify-center p-6"
-            onClick={() => setSelectedMedia(null)}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 30 }}
-              animate={{ scale: 1, y: 0 }}
-              className="w-full max-w-sm aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl relative bg-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img src={selectedMedia.url} className="w-full h-full object-cover" alt={selectedMedia.title} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-10 space-y-4">
-                <span className="text-[#C2A385] text-[10px] font-black uppercase tracking-[0.4em]">{selectedMedia.category}</span>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#2C3E50]/90 backdrop-blur-xl flex items-center justify-center p-6" onClick={() => setSelectedMedia(null)}>
+            <div className="w-full max-w-sm aspect-[3/4] rounded-[3rem] overflow-hidden bg-white relative">
+              <OptimizedImage src={selectedMedia.url} alt={selectedMedia.title} className="w-full h-full" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-10">
                 <h3 className="text-white font-serif text-3xl">{selectedMedia.title}</h3>
-                <p className="text-white/70 italic text-sm font-serif border-t border-white/10 pt-4">
-                  "{selectedMedia.verse}"
-                </p>
-                <button 
-                  onClick={() => setSelectedMedia(null)}
-                  className="mt-6 py-4 bg-white text-[#2C3E50] rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-                >
-                  Fechar
-                </button>
+                <p className="text-white/70 italic text-sm mt-2">"{selectedMedia.verse}"</p>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <footer className="text-center py-10 opacity-30">
-        <p className="font-serif italic text-sm">"{motivationalMessage}"</p>
-      </footer>
-    </motion.div>
+    </div>
   );
 };
 

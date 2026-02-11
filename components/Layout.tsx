@@ -2,22 +2,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BookOpen, Sun, User, MessageCircle } from 'lucide-react';
+import { Home, BookOpen, Sun, User, Search, MessageCircle } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/journey', label: 'Jornadas', icon: BookOpen },
-    { path: '/prayer', label: 'Altar', icon: MessageCircle },
-    { path: '/morning', label: 'Matinal', icon: Sun },
-    { path: '/profile', label: 'Perfil', icon: User },
+    { path: '/', label: 'Início', icon: Home },
+    { path: '/journey', label: 'Caminhos', icon: BookOpen },
+    { path: '/bible', label: 'Bíblia', icon: Search },
+    { path: '/morning', label: 'Ritual', icon: Sun },
+    { path: '/profile', label: 'Eu', icon: User },
   ];
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] flex flex-col max-w-md mx-auto shadow-2xl relative overflow-hidden">
-      {/* Page Content with Transition */}
       <main className="flex-1 pb-24 overflow-y-auto relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -33,15 +32,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </AnimatePresence>
       </main>
 
-      {/* Enhanced Bottom Nav */}
       <div className="fixed bottom-6 left-0 right-0 max-w-[calc(100%-3rem)] mx-auto z-50">
         <nav className="bg-white/90 backdrop-blur-xl border border-[#C2A385]/20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(44,62,80,0.1)] flex justify-around items-center h-20 px-2 relative overflow-hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // Verifica se o caminho atual começa com o path do item (exceto para a Home)
-            const isActive = item.path === '/' 
-              ? location.pathname === '/' 
-              : location.pathname.startsWith(item.path);
+            const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
             
             return (
               <Link
@@ -58,45 +53,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 )}
                 
                 <motion.div
-                  animate={{ 
-                    scale: isActive ? 1.1 : 1,
-                    y: isActive ? -2 : 0
-                  }}
-                  className={`transition-colors duration-300 ${
-                    isActive ? 'text-[#C2A385]' : 'text-[#2C3E50]/30 group-hover:text-[#2C3E50]/50'
-                  }`}
+                  animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -2 : 0 }}
+                  className={`transition-colors duration-300 ${isActive ? 'text-[#C2A385]' : 'text-[#2C3E50]/30'}`}
                 >
-                  <Icon size={isActive ? 24 : 20} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon size={isActive ? 22 : 18} strokeWidth={isActive ? 2.5 : 2} />
                 </motion.div>
 
                 <motion.span 
-                  initial={false}
-                  animate={{ 
-                    opacity: isActive ? 1 : 0,
-                    y: isActive ? 0 : 5,
-                    scale: isActive ? 1 : 0.8
-                  }}
-                  className={`text-[8px] uppercase tracking-[0.2em] font-black mt-1 ${
-                    isActive ? 'text-[#C2A385]' : 'text-[#2C3E50]/30'
-                  }`}
+                  animate={{ opacity: isActive ? 1 : 0.4, scale: isActive ? 1 : 0.9 }}
+                  className={`text-[7px] uppercase tracking-[0.2em] font-black mt-1 ${isActive ? 'text-[#C2A385]' : 'text-[#2C3E50]/30'}`}
                 >
                   {item.label}
                 </motion.span>
-
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeDot"
-                    className="absolute -bottom-1 w-1 h-1 bg-[#C2A385] rounded-full"
-                    transition={{ type: "spring", bounce: 0.5, duration: 0.6 }}
-                  />
-                )}
               </Link>
             );
           })}
         </nav>
       </div>
-      
-      {/* Safe Area Spacer for iOS/Modern Devices */}
       <div className="fixed bottom-0 left-0 right-0 h-8 bg-[#FDFCF8] z-40 pointer-events-none" />
     </div>
   );
