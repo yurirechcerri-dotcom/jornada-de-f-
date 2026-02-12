@@ -4,37 +4,26 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import App from './App';
 
-// Polifill essencial para compatibilidade
+// Polyfill para garantir que bibliotecas que usam process.env não quebrem
+// Em produção, o Vite substituirá as chamadas a process.env.API_KEY por valores reais
 if (typeof (window as any).process === 'undefined') {
   (window as any).process = {
     env: {
-      NODE_ENV: 'production',
-      // Preservar variáveis injetadas se houver
-      // Fix: Removed 'typeof' to spread the actual object instead of a string
-      ...((window as any).process?.env || {})
+      NODE_ENV: 'production'
     }
   };
 }
 
-/**
- * Registro do Service Worker (PWA)
- */
 const registerServiceWorker = () => {
   if ('serviceWorker' in navigator) {
     setTimeout(async () => {
       try {
         const swUrl = new URL('/sw.js', window.location.origin).href;
-        const isDevelopmentPreview = window.location.hostname.includes('usercontent.goog') || 
-                                     window.location.hostname.includes('ai.studio');
-
-        const registration = await navigator.serviceWorker.register(swUrl);
-        console.debug('Jornada de Fé: PWA pronto no escopo:', registration.scope);
+        await navigator.serviceWorker.register(swUrl);
       } catch (error: any) {
-        const ignoredErrors = ['invalid state', 'mismatch origin', 'SecurityError', 'disallowed by'];
-        const shouldLog = !ignoredErrors.some(msg => error.message.toLowerCase().includes(msg));
-        if (shouldLog) console.warn('Aviso de PWA:', error.message);
+        // Ignora avisos de desenvolvimento
       }
-    }, 1500); 
+    }, 2000); 
   }
 };
 
@@ -45,9 +34,7 @@ if (document.readyState === 'complete') {
 }
 
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
+if (!rootElement) throw new Error("Root element not found");
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

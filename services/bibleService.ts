@@ -8,6 +8,39 @@ export interface BibleChapter {
   verses: { number: number; text: string }[];
 }
 
+// "Núcleo de Fé" - Conteúdo Offline para os capítulos mais lidos
+const OFFLINE_BIBLE: Record<string, BibleChapter> = {
+  'salmos_23': {
+    book: 'Salmos',
+    chapter: 23,
+    verses: [
+      { number: 1, text: "O Senhor é o meu pastor; nada me faltará." },
+      { number: 2, text: "Deitar-me faz em verdes pastos, guia-me mansamente a águas tranquilas." },
+      { number: 3, text: "Refrigera a minha alma; guia-me pelas veredas da justiça por amor do seu nome." },
+      { number: 4, text: "Ainda que eu andasse pelo vale da sombra da morte, não temeria mal algum, porque tu estás comigo; a tua vara e o teu cajado me consolam." },
+      { number: 5, text: "Preparas uma mesa perante mim na presença dos meus inimigos, unges a minha cabeça com óleo, o meu cálice transborda." },
+      { number: 6, text: "Certamente que a bondade e a misericórdia me seguirão todos os dias da minha vida; e habitarei na Casa do Senhor por longos dias." }
+    ]
+  },
+  'joão_3': {
+    book: 'João',
+    chapter: 3,
+    verses: [
+      { number: 16, text: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna." },
+      { number: 17, text: "Porque Deus enviou o seu Filho ao mundo, não para que condenasse o mundo, mas para que o mundo fosse salvo por ele." }
+    ]
+  },
+  'gênesis_1': {
+    book: 'Gênesis',
+    chapter: 1,
+    verses: [
+      { number: 1, text: "No princípio, criou Deus os céus e a terra." },
+      { number: 2, text: "A terra, porém, estava sem forma e vazia; havia trevas sobre a face do abismo, e o Espírito de Deus pairava por sobre as águas." },
+      { number: 3, text: "Disse Deus: Haja luz; e houve luz." }
+    ]
+  }
+};
+
 const BIBLE_BOOKS: BibleBook[] = [
   { id: 'gen', name: 'Gênesis', abbreviation: 'Gn', chapters: 50, testament: 'old' },
   { id: 'exo', name: 'Êxodo', abbreviation: 'Ex', chapters: 40, testament: 'old' },
@@ -29,18 +62,14 @@ const BIBLE_BOOKS: BibleBook[] = [
   { id: 'rev', name: 'Apocalipse', abbreviation: 'Ap', chapters: 22, testament: 'new' },
 ];
 
-/**
- * Função utilitária para extrair e validar JSON de respostas da IA
- */
 const extractJSON = (text: string | undefined) => {
   if (!text) return null;
   try {
-    // Tenta encontrar o conteúdo entre chaves caso a IA mande markdown
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const cleanJson = jsonMatch ? jsonMatch[0] : text;
     return JSON.parse(cleanJson);
   } catch (e) {
-    console.error("Erro ao parsear JSON da Bíblia:", e, text);
+    console.error("Erro ao parsear JSON:", e);
     return null;
   }
 };
@@ -51,20 +80,26 @@ export const bibleService = {
   },
 
   async getChapterText(bookName: string, chapter: number): Promise<BibleChapter | null> {
-    const cacheKey = `bible_chapter_${bookName.toLowerCase()}_${chapter}`;
+    const key = `${bookName.toLowerCase()}_${chapter}`;
+    
+    // 1. Tenta o conteúdo offline (imediato)
+    if (OFFLINE_BIBLE[key]) {
+      return OFFLINE_BIBLE[key];
+    }
+
+    // 2. Tenta o cache do navegador
+    const cacheKey = `bible_cache_${key}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
+    // 3. Busca via IA como fallback
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Fix: Exclusively use process.env.API_KEY for initialization as required by @google/genai guidelines
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Aja como uma API de Bíblia. Forneça o texto completo do capítulo ${chapter} de ${bookName} na versão Almeida Revista e Atualizada. 
-        Retorne estritamente um JSON neste formato: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}.
-        Certifique-se de incluir todos os versículos do capítulo.`,
-        config: { 
-          responseMimeType: "application/json"
-        }
+        contents: `Retorne o texto bíblico do capítulo ${chapter} do livro de ${bookName} (Versão ARA). Retorne APENAS um JSON no formato: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}`,
+        config: { responseMimeType: "application/json" }
       });
 
       const result = extractJSON(response.text);
@@ -74,18 +109,18 @@ export const bibleService = {
       }
       return null;
     } catch (error) {
-      console.error("Erro crítico ao carregar capítulo:", error);
+      console.error("Erro na busca remota:", error);
       return null;
     }
   },
 
   async searchVerse(query: string) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Fix: Exclusively use process.env.API_KEY for initialization as required by @google/genai guidelines
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Busque na Bíblia por: "${query}". Retorne um JSON com o versículo mais relevante: {"text": "texto do versículo", "reference": "Livro Cap:Ver", "context": "breve explicação"}. 
-        Se não encontrar, retorne null.`,
+        contents: `Busque na Bíblia: "${query}". Retorne um JSON: {"text": "texto", "reference": "Livro Cap:Ver", "context": "breve explicação"}.`,
         config: { responseMimeType: "application/json" }
       });
       return extractJSON(response.text);
