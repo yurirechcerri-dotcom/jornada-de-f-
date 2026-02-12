@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
+    // Importante: Manter como '/' para o Vercel funcionar com Rewrites de SPA
     base: '/',
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || ""),
@@ -14,11 +15,18 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
-      chunkSizeWarningLimit: 2000,
+      cssCodeSplit: true,
+      sourcemap: false,
+      chunkSizeWarningLimit: 3000,
       rollupOptions: {
         output: {
+          // Garante nomes de arquivos consistentes para evitar erros de MIME type
+          entryFileNames: `assets/[name].[hash].js`,
+          chunkFileNames: `assets/[name].[hash].js`,
+          assetFileNames: `assets/[name].[hash].[ext]`,
           manualChunks: {
-            'vendor': ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'lucide-react']
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-ui': ['framer-motion', 'lucide-react']
           }
         }
       }

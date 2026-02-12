@@ -7,7 +7,7 @@ export interface BibleChapter {
   verses: { number: number; text: string }[];
 }
 
-// "Núcleo de Fé" - Conteúdo Imediato (Direto no App)
+// "Núcleo de Fé" - Conteúdo Imediato (Offline)
 const OFFLINE_BIBLE: Record<string, BibleChapter> = {
   'salmos_23': {
     book: 'Salmos',
@@ -110,13 +110,16 @@ export const bibleService = {
 
     // 3. Fallback IA
     try {
-      // Fix: Strictly following rule to use process.env.API_KEY directly for GoogleGenAI initialization
-      if (!process.env.API_KEY || process.env.API_KEY === "undefined") throw new Error("API Key ausente");
+      const apiKey = process.env.API_KEY;
+      if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
+        console.error("BibleService: API_KEY inválida ou ausente.");
+        return null;
+      }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Aja como uma API bíblica. Retorne o capítulo ${chapter} de ${bookName} (Versão ARA). Retorne APENAS um JSON: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}`,
+        contents: `Retorne o capítulo ${chapter} de ${bookName} (Versão ARA). Retorne APENAS um JSON: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}`,
         config: { responseMimeType: "application/json" }
       });
 
@@ -127,17 +130,17 @@ export const bibleService = {
       }
       return null;
     } catch (error) {
-      console.warn("Erro ao carregar remotamente, tentando cache antigo...");
+      console.error("BibleService: Erro ao carregar IA:", error);
       return null;
     }
   },
 
   async searchVerse(query: string) {
     try {
-      // Fix: Strictly following rule to use process.env.API_KEY directly for GoogleGenAI initialization
-      if (!process.env.API_KEY || process.env.API_KEY === "undefined") return null;
+      const apiKey = process.env.API_KEY;
+      if (!apiKey || apiKey === "undefined") return null;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Encontre um versículo sobre: "${query}". Retorne JSON: {"text": "...", "reference": "...", "context": "..."}`,
