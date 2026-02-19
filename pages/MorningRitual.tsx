@@ -5,18 +5,21 @@ import { Timer, Check, ChevronDown } from 'lucide-react';
 import { trackingService } from '../services/trackingService';
 import AppLogo from '../components/AppLogo';
 
-const steps = [
-  { id: 'focus', title: 'Silêncio e Foco', desc: 'Respire fundo. Dedique 2 minutos apenas para estar na presença.' },
-  { id: 'verse', title: 'Palavra do Dia', desc: '"Elevo os meus olhos para os montes; de onde virá o meu socorro? O meu socorro vem do Senhor, que fez os céus e a terra." — Salmo 121:1-2' },
-  { id: 'prayer', title: 'Oração Matinal', desc: 'Fale com Deus como um amigo. Agradeça pelo novo dia e entregue suas preocupações.' },
-  { id: 'intention', title: 'Intenção do Dia', desc: 'Qual é o seu foco espiritual para hoje? Escreva sua intenção.' }
-];
+import { getVerseOfTheDay } from '../services/verseService';
 
 const MorningRitual: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [intention, setIntention] = useState('');
   const [timeLeft, setTimeLeft] = useState(120);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const dailyVerse = getVerseOfTheDay();
+
+  const steps = [
+    { id: 'focus', title: 'Silêncio e Foco', desc: 'Respire fundo. Dedique 2 minutos apenas para estar na presença.' },
+    { id: 'verse', title: 'Palavra do Dia', desc: `"${dailyVerse.text}" — ${dailyVerse.reference}` },
+    { id: 'prayer', title: 'Oração Matinal', desc: 'Fale com Deus como um amigo. Agradeça pelo novo dia e entregue suas preocupações.' },
+    { id: 'intention', title: 'Intenção do Dia', desc: 'Qual é o seu foco espiritual para hoje? Escreva sua intenção.' }
+  ];
 
   // Obtém ID real do usuário
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}');

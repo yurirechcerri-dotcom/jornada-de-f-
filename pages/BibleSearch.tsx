@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Book, Sparkles, Loader2, ChevronRight, ArrowLeft, CheckCircle2, AlertCircle, RefreshCcw } from 'lucide-react';
+import { Search, Book, Sparkles, Loader2, ChevronRight, ArrowLeft, CheckCircle2, AlertCircle, RefreshCcw, Info } from 'lucide-react';
 import { bibleService } from '../services/bibleService';
 import { trackingService } from '../services/trackingService';
 import { BibleBook } from '../types';
@@ -16,7 +15,14 @@ const BibleSearch: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState<any>(null);
 
+  const [testament, setTestament] = useState<'all' | 'old' | 'new'>('all');
+
   const books = useMemo(() => bibleService.getBooks(), []);
+  const filteredBooks = useMemo(() => {
+    if (testament === 'all') return books;
+    return books.filter(b => b.testament === testament);
+  }, [books, testament]);
+
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
   const userId = userData.id || userData.email;
 
@@ -39,10 +45,10 @@ const BibleSearch: React.FC = () => {
         setChapterContent(content);
         setView('reading');
       } else {
-        setError("Não conseguimos carregar este capítulo. Verifique sua conexão ou tente novamente.");
+        setError("Este capítulo requer conexão com a IA. Tente Gênesis 1 ou Salmos 23 para testar o modo offline.");
       }
     } catch (e) {
-      setError("Ocorreu um erro ao buscar as escrituras.");
+      setError("Ocorreu um erro ao carregar as escrituras.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +64,7 @@ const BibleSearch: React.FC = () => {
       if (res) {
         setSearchResult(res);
       } else {
-        setError("Nenhum versículo encontrado para esta busca.");
+        setError("Busca indisponível. Configure sua API_KEY no Vercel para habilitar a pesquisa por IA.");
       }
     } catch (e) {
       setError("Erro ao realizar a busca.");
@@ -114,22 +120,22 @@ const BibleSearch: React.FC = () => {
             className="py-20 flex flex-col items-center gap-4 text-center"
           >
             <Loader2 className="animate-spin text-[#C2A385]" size={32} />
-            <p className="text-[10px] font-bold text-[#C2A385] uppercase tracking-[0.2em]">Inspirando as Escrituras...</p>
+            <p className="text-[10px] font-bold text-[#C2A385] uppercase tracking-[0.2em]">Buscando nas Escrituras...</p>
           </motion.div>
         )}
 
         {!loading && error && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 p-8 rounded-[2.5rem] border border-red-100 text-center space-y-4"
+            className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-100 text-center space-y-4"
           >
-            <AlertCircle className="mx-auto text-red-400" size={32} />
-            <p className="text-sm text-red-700 font-medium">{error}</p>
+            <Info className="mx-auto text-amber-400" size={32} />
+            <p className="text-sm text-amber-800 font-medium leading-relaxed">{error}</p>
             <button 
-              onClick={() => selectedChapter ? handleChapterClick(selectedChapter) : setView('books')}
-              className="flex items-center gap-2 mx-auto px-6 py-2 bg-white rounded-full border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest shadow-sm"
+              onClick={() => setView('books')}
+              className="flex items-center gap-2 mx-auto px-6 py-2 bg-white rounded-full border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest shadow-sm"
             >
-              <RefreshCcw size={14} /> Tentar Novamente
+               Voltar para os Livros
             </button>
           </motion.div>
         )}
@@ -138,16 +144,44 @@ const BibleSearch: React.FC = () => {
           <motion.div 
             key="books"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="space-y-2"
+            className="space-y-6"
           >
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+              {[
+                { id: 'all', label: 'Todos' },
+                { id: 'old', label: 'Antigo' },
+                { id: 'new', label: 'Novo' }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTestament(t.id as any)}
+                  className={`px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                    testament === t.id 
+                      ? 'bg-[#2C3E50] text-white shadow-md' 
+                      : 'bg-white text-[#C2A385] border border-[#C2A385]/20'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-[#C2A385]/5 p-6 rounded-[2rem] border border-[#C2A385]/10">
+              <p className="text-[10px] text-[#C2A385] font-bold uppercase tracking-widest text-center">
+                Acesso completo disponível. Capítulos lidos são salvos para acesso offline.
+              </p>
+            </div>
             <div className="bg-white rounded-[2.5rem] border border-[#C2A385]/10 overflow-hidden shadow-sm">
-              {books.map((book, idx) => (
+              {filteredBooks.map((book, idx) => (
                 <div 
                   key={book.id}
                   onClick={() => handleBookClick(book)}
-                  className={`flex items-center justify-between p-5 active:bg-[#FDFCF8] transition-colors cursor-pointer ${idx !== books.length - 1 ? 'border-b border-gray-50' : ''}`}
+                  className={`flex items-center justify-between p-5 active:bg-[#FDFCF8] transition-colors cursor-pointer ${idx !== filteredBooks.length - 1 ? 'border-b border-gray-50' : ''}`}
                 >
-                  <span className="font-serif text-lg text-[#2C3E50]">{book.name}</span>
+                  <div className="flex flex-col">
+                    <span className="font-serif text-lg text-[#2C3E50]">{book.name}</span>
+                    <span className="text-[8px] text-[#C2A385] font-bold uppercase tracking-widest">{book.chapters} Capítulos</span>
+                  </div>
                   <div className="w-10 h-10 rounded-full bg-[#2C3E50]/5 border border-[#C2A385]/20 flex items-center justify-center">
                     <span className="text-[9px] font-black text-[#C2A385] uppercase tracking-tighter">{book.abbreviation}</span>
                   </div>
@@ -205,12 +239,17 @@ const BibleSearch: React.FC = () => {
 
         {!loading && view === 'search' && (
           <motion.div key="search" className="space-y-6">
+            <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 mb-4">
+              <p className="text-[10px] text-amber-700 font-bold uppercase tracking-widest text-center">
+                Busca requer configuração de IA no Painel do Desenvolvedor.
+              </p>
+            </div>
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Ex: Amor de Deus, Salmo 91..."
+                placeholder="Ex: Amor de Deus, Fé..."
                 className="w-full pl-6 pr-16 py-5 bg-white rounded-[2rem] border border-[#C2A385]/20 shadow-sm outline-none text-sm"
               />
               <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-[#C2A385]">
@@ -226,7 +265,6 @@ const BibleSearch: React.FC = () => {
                  <p className="font-serif text-2xl italic text-[#2C3E50]">"{searchResult.text}"</p>
                  <div className="h-px w-12 bg-[#C2A385]/20 mx-auto" />
                  <span className="text-[10px] font-black text-[#C2A385] uppercase tracking-widest">{searchResult.reference}</span>
-                 {searchResult.context && <p className="text-[11px] text-gray-400 leading-relaxed italic">{searchResult.context}</p>}
               </motion.div>
             )}
           </motion.div>

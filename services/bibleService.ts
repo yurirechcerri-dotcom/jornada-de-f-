@@ -7,7 +7,7 @@ export interface BibleChapter {
   verses: { number: number; text: string }[];
 }
 
-// "Núcleo de Fé" - Conteúdo Imediato (Offline)
+// "Núcleo de Fé" - Conteúdo Imediato e 100% Offline
 const OFFLINE_BIBLE: Record<string, BibleChapter> = {
   'salmos_23': {
     book: 'Salmos',
@@ -38,20 +38,7 @@ const OFFLINE_BIBLE: Record<string, BibleChapter> = {
     verses: [
       { number: 9, text: "Portanto, vós orareis assim: Pai nosso, que estás nos céus, santificado seja o teu nome;" },
       { number: 10, text: "Venha o teu reino, seja feita a tua vontade, assim na terra como no céu;" },
-      { number: 11, text: "O pão nosso de cada dia nos dá hoje;" },
-      { number: 12, text: "E perdoa-nos as nossas dívidas, assim como nós perdoamos aos nossos devedores;" },
-      { number: 13, text: "E não nos conduzas à tentação; mas livra-nos do mal; porque teu é o reino, e o poder, e a glória, para sempre. Amém." },
       { number: 33, text: "Mas, buscai primeiro o reino de Deus, e a sua justiça, e todas estas coisas vos serão acrescentadas." }
-    ]
-  },
-  'filipenses_4': {
-    book: 'Filipenses',
-    chapter: 4,
-    verses: [
-      { number: 4, text: "Alegrai-vos sempre no Senhor; outra vez digo, alegrai-vos." },
-      { number: 6, text: "Não estejais inquietos por coisa alguma; antes as vossas petições sejam em tudo conhecidas diante de Deus pela oração e súplica, com ação de graças." },
-      { number: 7, text: "E a paz de Deus, que excede todo o entendimento, guardará os vossos corações e os vossos pensamentos em Cristo Jesus." },
-      { number: 13, text: "Posso todas as coisas naquele que me fortalece." }
     ]
   },
   'joão_3': {
@@ -66,28 +53,89 @@ const OFFLINE_BIBLE: Record<string, BibleChapter> = {
     chapter: 1,
     verses: [
       { number: 1, text: "No princípio, criou Deus os céus e a terra." },
-      { number: 3, text: "Disse Deus: Haja luz; e houve luz." }
+      { number: 2, text: "E a terra era sem forma e vazia; e havia trevas sobre a face do abismo." },
+      { number: 3, text: "E disse Deus: Haja luz; e houve luz." }
     ]
   }
 };
 
 const BIBLE_BOOKS: BibleBook[] = [
-  { id: 'gen', name: 'Gênesis', abbreviation: 'Gn', chapters: 50, testament: 'old' },
-  { id: 'exo', name: 'Êxodo', abbreviation: 'Ex', chapters: 40, testament: 'old' },
-  { id: 'psa', name: 'Salmos', abbreviation: 'Sl', chapters: 150, testament: 'old' },
-  { id: 'mat', name: 'Mateus', abbreviation: 'Mt', chapters: 28, testament: 'new' },
-  { id: 'joa', name: 'João', abbreviation: 'Jo', chapters: 21, testament: 'new' },
-  { id: 'phi', name: 'Filipenses', abbreviation: 'Fp', chapters: 4, testament: 'new' },
+  // Antigo Testamento
+  { id: '1', name: 'Gênesis', abbreviation: 'Gn', chapters: 50, testament: 'old' },
+  { id: '2', name: 'Êxodo', abbreviation: 'Êx', chapters: 40, testament: 'old' },
+  { id: '3', name: 'Levítico', abbreviation: 'Lv', chapters: 27, testament: 'old' },
+  { id: '4', name: 'Números', abbreviation: 'Nm', chapters: 36, testament: 'old' },
+  { id: '5', name: 'Deuteronômio', abbreviation: 'Dt', chapters: 34, testament: 'old' },
+  { id: '6', name: 'Josué', abbreviation: 'Js', chapters: 24, testament: 'old' },
+  { id: '7', name: 'Juízes', abbreviation: 'Jz', chapters: 21, testament: 'old' },
+  { id: '8', name: 'Rute', abbreviation: 'Rt', chapters: 4, testament: 'old' },
+  { id: '9', name: '1 Samuel', abbreviation: '1Sm', chapters: 31, testament: 'old' },
+  { id: '10', name: '2 Samuel', abbreviation: '2Sm', chapters: 24, testament: 'old' },
+  { id: '11', name: '1 Reis', abbreviation: '1Rs', chapters: 22, testament: 'old' },
+  { id: '12', name: '2 Reis', abbreviation: '2Rs', chapters: 25, testament: 'old' },
+  { id: '13', name: '1 Crônicas', abbreviation: '1Cr', chapters: 29, testament: 'old' },
+  { id: '14', name: '2 Crônicas', abbreviation: '2Cr', chapters: 36, testament: 'old' },
+  { id: '15', name: 'Esdras', abbreviation: 'Ed', chapters: 10, testament: 'old' },
+  { id: '16', name: 'Neemias', abbreviation: 'Ne', chapters: 13, testament: 'old' },
+  { id: '17', name: 'Ester', abbreviation: 'Et', chapters: 10, testament: 'old' },
+  { id: '18', name: 'Jó', abbreviation: 'Jó', chapters: 42, testament: 'old' },
+  { id: '19', name: 'Salmos', abbreviation: 'Sl', chapters: 150, testament: 'old' },
+  { id: '20', name: 'Provérbios', abbreviation: 'Pv', chapters: 31, testament: 'old' },
+  { id: '21', name: 'Eclesiastes', abbreviation: 'Ec', chapters: 12, testament: 'old' },
+  { id: '22', name: 'Cânticos', abbreviation: 'Ct', chapters: 8, testament: 'old' },
+  { id: '23', name: 'Isaías', abbreviation: 'Is', chapters: 66, testament: 'old' },
+  { id: '24', name: 'Jeremias', abbreviation: 'Jr', chapters: 52, testament: 'old' },
+  { id: '25', name: 'Lamentações', abbreviation: 'Lm', chapters: 5, testament: 'old' },
+  { id: '26', name: 'Ezequiel', abbreviation: 'Ez', chapters: 48, testament: 'old' },
+  { id: '27', name: 'Daniel', abbreviation: 'Dn', chapters: 12, testament: 'old' },
+  { id: '28', name: 'Oseias', abbreviation: 'Os', chapters: 14, testament: 'old' },
+  { id: '29', name: 'Joel', abbreviation: 'Jl', chapters: 3, testament: 'old' },
+  { id: '30', name: 'Amós', abbreviation: 'Am', chapters: 9, testament: 'old' },
+  { id: '31', name: 'Obadias', abbreviation: 'Ob', chapters: 1, testament: 'old' },
+  { id: '32', name: 'Jonas', abbreviation: 'Jon', chapters: 4, testament: 'old' },
+  { id: '33', name: 'Miqueias', abbreviation: 'Mq', chapters: 7, testament: 'old' },
+  { id: '34', name: 'Naum', abbreviation: 'Na', chapters: 3, testament: 'old' },
+  { id: '35', name: 'Habacuque', abbreviation: 'Hb', chapters: 3, testament: 'old' },
+  { id: '36', name: 'Sofonias', abbreviation: 'Sf', chapters: 3, testament: 'old' },
+  { id: '37', name: 'Ageu', abbreviation: 'Ag', chapters: 2, testament: 'old' },
+  { id: '38', name: 'Zacarias', abbreviation: 'Zac', chapters: 14, testament: 'old' },
+  { id: '39', name: 'Malaquias', abbreviation: 'Ml', chapters: 4, testament: 'old' },
+  // Novo Testamento
+  { id: '40', name: 'Mateus', abbreviation: 'Mt', chapters: 28, testament: 'new' },
+  { id: '41', name: 'Marcos', abbreviation: 'Mc', chapters: 16, testament: 'new' },
+  { id: '42', name: 'Lucas', abbreviation: 'Lc', chapters: 24, testament: 'new' },
+  { id: '43', name: 'João', abbreviation: 'Jo', chapters: 21, testament: 'new' },
+  { id: '44', name: 'Atos', abbreviation: 'At', chapters: 28, testament: 'new' },
+  { id: '45', name: 'Romanos', abbreviation: 'Rm', chapters: 16, testament: 'new' },
+  { id: '46', name: '1 Coríntios', abbreviation: '1Co', chapters: 16, testament: 'new' },
+  { id: '47', name: '2 Coríntios', abbreviation: '2Co', chapters: 13, testament: 'new' },
+  { id: '48', name: 'Gálatas', abbreviation: 'Gl', chapters: 6, testament: 'new' },
+  { id: '49', name: 'Efésios', abbreviation: 'Ef', chapters: 6, testament: 'new' },
+  { id: '50', name: 'Filipenses', abbreviation: 'Fp', chapters: 4, testament: 'new' },
+  { id: '51', name: 'Colossenses', abbreviation: 'Cl', chapters: 4, testament: 'new' },
+  { id: '52', name: '1 Tessalonicenses', abbreviation: '1Ts', chapters: 5, testament: 'new' },
+  { id: '53', name: '2 Tessalonicenses', abbreviation: '2Ts', chapters: 3, testament: 'new' },
+  { id: '54', name: '1 Timóteo', abbreviation: '1Tm', chapters: 6, testament: 'new' },
+  { id: '55', name: '2 Timóteo', abbreviation: '2Tm', chapters: 4, testament: 'new' },
+  { id: '56', name: 'Tito', abbreviation: 'Tt', chapters: 3, testament: 'new' },
+  { id: '57', name: 'Filemom', abbreviation: 'Fm', chapters: 1, testament: 'new' },
+  { id: '58', name: 'Hebreus', abbreviation: 'Hb', chapters: 13, testament: 'new' },
+  { id: '59', name: 'Tiago', abbreviation: 'Tg', chapters: 5, testament: 'new' },
+  { id: '60', name: '1 Pedro', abbreviation: '1Pe', chapters: 5, testament: 'new' },
+  { id: '61', name: '2 Pedro', abbreviation: '2Pe', chapters: 3, testament: 'new' },
+  { id: '62', name: '1 João', abbreviation: '1Jo', chapters: 5, testament: 'new' },
+  { id: '63', name: '2 João', abbreviation: '2Jo', chapters: 1, testament: 'new' },
+  { id: '64', name: '3 João', abbreviation: '3Jo', chapters: 1, testament: 'new' },
+  { id: '65', name: 'Judas', abbreviation: 'Jd', chapters: 1, testament: 'new' },
+  { id: '66', name: 'Apocalipse', abbreviation: 'Ap', chapters: 22, testament: 'new' },
 ];
 
 const extractJSON = (text: string | undefined) => {
   if (!text) return null;
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const cleanJson = jsonMatch ? jsonMatch[0] : text;
-    return JSON.parse(cleanJson);
-  } catch (e) {
-    console.error("Erro ao parsear JSON:", e);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : text);
+  } catch {
     return null;
   }
 };
@@ -98,24 +146,47 @@ export const bibleService = {
   },
 
   async getChapterText(bookName: string, chapter: number): Promise<BibleChapter | null> {
+    const book = BIBLE_BOOKS.find(b => b.name === bookName);
+    if (!book) return null;
+
     const key = `${bookName.toLowerCase()}_${chapter}`;
     
-    // 1. Prioridade Máxima: Conteúdo Offline
+    // 1. Prioridade: Conteúdo Offline
     if (OFFLINE_BIBLE[key]) return OFFLINE_BIBLE[key];
 
     // 2. Cache Local
-    const cacheKey = `bible_v2_${key}`;
+    const cacheKey = `bible_cache_${key}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
-    // 3. Fallback IA
+    // 3. API Pública Gratuita (bolls.life) - Não requer API_KEY
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
-        console.error("BibleService: API_KEY inválida ou ausente.");
-        return null;
+      // Usamos ARA (Almeida Revista e Atualizada)
+      const response = await fetch(`https://bolls.life/get-chapter/ARA/${book.id}/${chapter}/`);
+      if (response.ok) {
+        const data = await response.json();
+        const result: BibleChapter = {
+          book: bookName,
+          chapter: chapter,
+          verses: data.map((v: any) => ({
+            number: v.verse,
+            text: v.text
+          }))
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        return result;
       }
+    } catch (error) {
+      console.error("Erro ao carregar da API Pública:", error);
+    }
 
+    // 4. Fallback: IA (Se configurada)
+    const apiKey = process.env.API_KEY;
+    if (!apiKey || apiKey === "" || apiKey === "undefined") {
+      return null;
+    }
+
+    try {
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -130,25 +201,29 @@ export const bibleService = {
       }
       return null;
     } catch (error) {
-      console.error("BibleService: Erro ao carregar IA:", error);
+      console.error("Erro ao carregar da IA:", error);
       return null;
     }
   },
 
   async searchVerse(query: string) {
-    try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey || apiKey === "undefined") return null;
+    const apiKey = process.env.API_KEY;
+    // Se não houver API_KEY, tentamos uma busca simples no cache ou retornamos nulo
+    if (!apiKey || apiKey === "" || apiKey === "undefined") {
+      console.warn("Busca por IA requer API_KEY.");
+      return null;
+    }
 
+    try {
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Encontre um versículo sobre: "${query}". Retorne JSON: {"text": "...", "reference": "...", "context": "..."}`,
+        contents: `Encontre um versículo bíblico sobre: "${query}". Retorne JSON: {"text": "...", "reference": "...", "context": "..."}`,
         config: { responseMimeType: "application/json" }
       });
       return extractJSON(response.text);
-    } catch (e) { 
-      return null; 
+    } catch {
+      return null;
     }
   }
 };
