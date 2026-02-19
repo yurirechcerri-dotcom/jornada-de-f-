@@ -207,10 +207,32 @@ export const bibleService = {
   },
 
   async searchVerse(query: string) {
+    // 1. Tenta usar a API Pública Gratuita primeiro (Mais rápido e sem custo)
+    try {
+      const response = await fetch(`https://bolls.life/search/ARA/?search=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          // Pegamos um resultado aleatório dos primeiros 5 para dar uma sensação de "inspiração" diferente a cada busca
+          const topResults = data.slice(0, 5);
+          const result = topResults[Math.floor(Math.random() * topResults.length)];
+          
+          const book = BIBLE_BOOKS.find(b => b.id === String(result.book));
+          
+          return {
+            text: result.text,
+            reference: `${book ? book.name : 'Bíblia'} ${result.chapter}:${result.verse}`,
+            context: "Encontrado via busca nas Escrituras."
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Erro na busca pública:", error);
+    }
+
+    // 2. Fallback: IA (Se configurada e a busca pública falhar)
     const apiKey = process.env.API_KEY;
-    // Se não houver API_KEY, tentamos uma busca simples no cache ou retornamos nulo
     if (!apiKey || apiKey === "" || apiKey === "undefined") {
-      console.warn("Busca por IA requer API_KEY.");
       return null;
     }
 

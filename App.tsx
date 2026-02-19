@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured, getLocalSession, clearLocalSession } from './lib/supabase';
 import Layout from './components/Layout';
 import { Loader2 } from 'lucide-react';
+import InstallGuide from './pages/InstallGuide';
 
 // Lazy Loading das páginas
 const Home = lazy(() => import('./pages/Home'));
@@ -25,19 +26,43 @@ const LoadingFallback = () => (
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       if (isSupabaseConfigured()) {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) { setSession(session); setLoading(false); return; }
+        if (session) { 
+          setSession(session); 
+          checkPWA(session.user.id);
+          setLoading(false); 
+          return; 
+        }
       }
       const local = getLocalSession();
-      if (local) setSession(local);
+      if (local) {
+        setSession(local);
+        checkPWA(local.user?.id || 'local');
+      }
       setLoading(false);
     };
+
+    const checkPWA = (userId: string) => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      const hasSeenGuide = localStorage.getItem(`pwa_guide_seen_${userId}`);
+      if (!isStandalone && !hasSeenGuide) {
+        setShowInstallGuide(true);
+      }
+    };
+
     checkAuth();
   }, []);
+
+  const closeInstallGuide = () => {
+    const userId = session?.user?.id || 'local';
+    localStorage.setItem(`pwa_guide_seen_${userId}`, 'true');
+    setShowInstallGuide(false);
+  };
 
   if (loading) return <LoadingFallback />;
   
@@ -51,21 +76,24 @@ const App: React.FC = () => {
   );
 
   return (
-    <Layout>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/journey" element={<JourneyList />} />
-          <Route path="/journey/:type" element={<JourneyDetail />} />
-          <Route path="/bible" element={<BibleSearch />} />
-          <Route path="/morning" element={<MorningRitual />} />
-          <Route path="/prayer" element={<PrayerWall />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/thank-you" element={<ThankYou />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </Layout>
+    <>
+      {showInstallGuide && <InstallGuide onClose={closeInstallGuide} />}
+      <Layout>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/journey" element={<JourneyList />} />
+            <Route path="/journey/:type" element={<JourneyDetail />} />
+            <Route path="/bible" element={<BibleSearch />} />
+            <Route path="/morning" element={<MorningRitual />} />
+            <Route path="/prayer" element={<PrayerWall />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </Layout>
+    </>
   );
 };
 

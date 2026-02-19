@@ -239,11 +239,6 @@ const BibleSearch: React.FC = () => {
 
         {!loading && view === 'search' && (
           <motion.div key="search" className="space-y-6">
-            <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 mb-4">
-              <p className="text-[10px] text-amber-700 font-bold uppercase tracking-widest text-center">
-                Busca requer configuração de IA no Painel do Desenvolvedor.
-              </p>
-            </div>
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
