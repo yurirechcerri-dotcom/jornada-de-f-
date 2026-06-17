@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import { BibleBook } from "../types";
 
 export interface BibleChapter {
@@ -140,112 +139,246 @@ const extractJSON = (text: string | undefined) => {
   }
 };
 
+// Map de apelidos e abreviações comuns para todos os 66 livros da Bíblia
+const BOOK_ALIASES: Record<string, string[]> = {
+  '1': ['genesis', 'gn', 'genesis'],
+  '2': ['exodo', 'ex', 'exodo'],
+  '3': ['levitico', 'lv', 'levitico'],
+  '4': ['numeros', 'nm', 'num'],
+  '5': ['deuteronomio', 'dt', 'deut'],
+  '6': ['josue', 'js', 'jos'],
+  '7': ['juizes', 'jz', 'juiz'],
+  '8': ['rute', 'rt', 'rut'],
+  '9': ['1samuel', '1sm', '1sam'],
+  '10': ['2samuel', '2sm', '2sam'],
+  '11': ['1reis', '1rs', '1re'],
+  '12': ['2reis', '2rs', '2re'],
+  '13': ['1cronicas', '1cr', '1cron'],
+  '14': ['2cronicas', '2cr', '2cron'],
+  '15': ['esdras', 'ed', 'esd'],
+  '16': ['neemias', 'ne', 'neem'],
+  '17': ['ester', 'et', 'est'],
+  '18': ['jo', 'job', 'jo'],
+  '19': ['salmos', 'sl', 'salmo', 'psalms', 'ps'],
+  '20': ['provérbios', 'prov', 'proverbios', 'pv'],
+  '21': ['eclesiastes', 'ec', 'ecl'],
+  '22': ['canticos', 'ct', 'cantico', 'cantares', 'canticos'],
+  '23': ['isaias', 'is', 'isa'],
+  '24': ['jeremias', 'jr', 'jer'],
+  '25': ['lamentacoes', 'lm', 'lam'],
+  '26': ['ezequiel', 'ez', 'ezeq'],
+  '27': ['daniel', 'dn', 'dan'],
+  '28': ['oseias', 'os', 'ose'],
+  '29': ['joel', 'jl'],
+  '30': ['amos', 'am'],
+  '31': ['obadias', 'ob'],
+  '32': ['jonas', 'jon'],
+  '33': ['miqueias', 'mq', 'miq'],
+  '34': ['naum', 'na'],
+  '35': ['habacuque', 'hb', 'hab'],
+  '36': ['sofonias', 'sf', 'sof'],
+  '37': ['ageu', 'ag'],
+  '38': ['zacarias', 'zac', 'zc'],
+  '39': ['malaquias', 'ml', 'mal'],
+  '40': ['mateus', 'mt', 'mat'],
+  '41': ['marcos', 'mc', 'marc'],
+  '42': ['lucas', 'lc', 'luc'],
+  '43': ['joao', 'jo', 'john'],
+  '44': ['atos', 'at', 'acts'],
+  '45': ['romanos', 'rm', 'rom'],
+  '46': ['1corintios', '1co', '1cor', '1corintios'],
+  '47': ['2corintios', '2co', '2cor', '2corintios'],
+  '48': ['galatas', 'gl', 'gal'],
+  '49': ['efesios', 'ef', 'efe', 'efesios'],
+  '50': ['filipenses', 'fp', 'fil'],
+  '51': ['colossenses', 'cl', 'col'],
+  '52': ['1tessalonicenses', '1ts', '1tess'],
+  '53': ['2tessalonicenses', '2ts', '2tess'],
+  '54': ['1timoteo', '1tm', '1tim'],
+  '55': ['2timoteo', '2tm', '2tim'],
+  '56': ['tito', 'tt', 'tit'],
+  '57': ['filemom', 'fm', 'film'],
+  '58': ['hebreus', 'hb', 'heb'],
+  '59': ['tiago', 'tg', 'tiag', 'james'],
+  '60': ['1pedro', '1pe', '1ped'],
+  '61': ['2pedro', '2pe', '2ped'],
+  '62': ['1joao', '1jo', '1john'],
+  '63': ['2joao', '2jo', '2john'],
+  '64': ['3joao', '3jo', '3john'],
+  '65': ['judas', 'jd', 'jud'],
+  '66': ['apocalipse', 'ap', 'apoc', 'revelation', 'rev']
+};
+
+export interface SearchVerseResult {
+  text: string;
+  reference: string;
+  bookId: string;
+  bookName: string;
+  chapter: number;
+  verse: number;
+}
+
+export function normalizeString(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-z0-9]/g, ''); // remove tudo exceto letras e números
+}
+
+export function findBookByInput(input: string): BibleBook | undefined {
+  const normalizedInput = normalizeString(input);
+  if (!normalizedInput) return undefined;
+
+  return BIBLE_BOOKS.find(b => {
+    const normName = normalizeString(b.name);
+    const normAbbr = normalizeString(b.abbreviation);
+    const aliases = BOOK_ALIASES[b.id] || [];
+    return normName === normalizedInput || normAbbr === normalizedInput || aliases.includes(normalizedInput);
+  });
+}
+
+export interface ParsedQuery {
+  type: 'reference' | 'book' | 'keyword';
+  book?: BibleBook;
+  chapter?: number;
+  verse?: number;
+}
+
+let localBibleData: any[] | null = null;
+
+async function loadLocalBible(): Promise<any[]> {
+  if (localBibleData) return localBibleData;
+  try {
+    const res = await fetch('/bible-pt.json');
+    if (!res.ok) {
+      throw new Error(`Failed to load local Bible file: ${res.statusText}`);
+    }
+    localBibleData = await res.json();
+    return localBibleData || [];
+  } catch (err) {
+    console.error("Failed to load local bible JSON:", err);
+    return [];
+  }
+}
+
 export const bibleService = {
   getBooks() {
     return BIBLE_BOOKS;
+  },
+
+  parseQuery(query: string): ParsedQuery {
+    const clean = query.trim().replace(/\s+/g, ' ');
+    if (!clean) return { type: 'keyword' };
+
+    // Regex para capturar: (Opcional número seguido de espaço ou não) (Nome do livro) (Capítulo) (Opcional separador e Versículo)
+    // Suporta "João 3:16", "1 João 5:1", "Gênesis 1", "Sl 23", "Efésios 6 10"
+    const refRegex = /^([123]\s*[a-zA-ZáéíóúÁÉÍÓÚçÇ]+|[a-zA-ZáéíóúÁÉÍÓÚçÇ\s+]+?)\s+(\d+)(?:\s*[:\s-]\s*(\d+))?$/i;
+    const match = clean.match(refRegex);
+
+    if (match) {
+      const bookInput = match[1].trim();
+      const chapter = parseInt(match[2], 10);
+      const verse = match[3] ? parseInt(match[3], 10) : undefined;
+
+      const book = findBookByInput(bookInput);
+      if (book && chapter >= 1 && chapter <= book.chapters) {
+        return {
+          type: 'reference',
+          book,
+          chapter,
+          verse
+        };
+      }
+    }
+
+    // Tenta encontrar apenas pelo nome do livro (ex: "Efésios", "Gênesis")
+    const bookOnly = findBookByInput(clean);
+    if (bookOnly) {
+      return {
+        type: 'book',
+        book: bookOnly
+      };
+    }
+
+    return { type: 'keyword' };
   },
 
   async getChapterText(bookName: string, chapter: number): Promise<BibleChapter | null> {
     const book = BIBLE_BOOKS.find(b => b.name === bookName);
     if (!book) return null;
 
-    const key = `${bookName.toLowerCase()}_${chapter}`;
-    
-    // 1. Prioridade: Conteúdo Offline
-    if (OFFLINE_BIBLE[key]) return OFFLINE_BIBLE[key];
-
-    // 2. Cache Local
-    const cacheKey = `bible_cache_${key}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) return JSON.parse(cached);
-
-    // 3. API Pública Gratuita (bolls.life) - Não requer API_KEY
+    // 1. Tenta carregar do JSON Local (Offline total)
     try {
-      // Usamos ARA (Almeida Revista e Atualizada)
-      const response = await fetch(`https://bolls.life/get-chapter/ARA/${book.id}/${chapter}/`);
-      if (response.ok) {
-        const data = await response.json();
-        const result: BibleChapter = {
-          book: bookName,
-          chapter: chapter,
-          verses: data.map((v: any) => ({
-            number: v.verse,
-            text: v.text
-          }))
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(result));
-        return result;
-      }
-    } catch (error) {
-      console.error("Erro ao carregar da API Pública:", error);
-    }
-
-    // 4. Fallback: IA (Se configurada)
-    const apiKey = process.env.API_KEY;
-    if (!apiKey || apiKey === "" || apiKey === "undefined") {
-      return null;
-    }
-
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Retorne o capítulo ${chapter} de ${bookName} (Versão ARA). Retorne APENAS um JSON: {"book": "${bookName}", "chapter": ${chapter}, "verses": [{"number": 1, "text": "..."}]}`,
-        config: { responseMimeType: "application/json" }
-      });
-
-      const result = extractJSON(response.text);
-      if (result && result.verses) {
-        localStorage.setItem(cacheKey, JSON.stringify(result));
-        return result;
-      }
-      return null;
-    } catch (error) {
-      console.error("Erro ao carregar da IA:", error);
-      return null;
-    }
-  },
-
-  async searchVerse(query: string) {
-    // 1. Tenta usar a API Pública Gratuita primeiro (Mais rápido e sem custo)
-    try {
-      const response = await fetch(`https://bolls.life/search/ARA/?search=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          // Pegamos um resultado aleatório dos primeiros 5 para dar uma sensação de "inspiração" diferente a cada busca
-          const topResults = data.slice(0, 5);
-          const result = topResults[Math.floor(Math.random() * topResults.length)];
-          
-          const book = BIBLE_BOOKS.find(b => b.id === String(result.book));
-          
+      const bible = await loadLocalBible();
+      if (bible && bible.length > 0) {
+        const bookIndex = BIBLE_BOOKS.findIndex(b => b.name === bookName);
+        const bookData = bible[bookIndex];
+        if (bookData && bookData.chapters && bookData.chapters[chapter - 1]) {
+          const chapterVerses = bookData.chapters[chapter - 1];
           return {
-            text: result.text,
-            reference: `${book ? book.name : 'Bíblia'} ${result.chapter}:${result.verse}`,
-            context: "Encontrado via busca nas Escrituras."
+            book: bookName,
+            chapter: chapter,
+            verses: chapterVerses.map((vText: string, vIdx: number) => ({
+              number: vIdx + 1,
+              text: vText
+            }))
           };
         }
       }
     } catch (error) {
-      console.error("Erro na busca pública:", error);
+      console.error("Erro ao carregar do JSON local:", error);
     }
 
-    // 2. Fallback: IA (Se configurada e a busca pública falhar)
-    const apiKey = process.env.API_KEY;
-    if (!apiKey || apiKey === "" || apiKey === "undefined") {
-      return null;
+    // 2. Fallback: Conteúdo pré-definido offline do "Núcleo de Fé"
+    const key = `${bookName.toLowerCase()}_${chapter}`;
+    if (OFFLINE_BIBLE[key]) return OFFLINE_BIBLE[key];
+
+    return null;
+  },
+
+  async searchVerse(query: string): Promise<SearchVerseResult[]> {
+    const bible = await loadLocalBible();
+    if (!bible || bible.length === 0) {
+      return [];
     }
 
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Encontre um versículo bíblico sobre: "${query}". Retorne JSON: {"text": "...", "reference": "...", "context": "..."}`,
-        config: { responseMimeType: "application/json" }
-      });
-      return extractJSON(response.text);
-    } catch {
-      return null;
+    const normalizedQuery = normalizeString(query);
+    if (!normalizedQuery) return [];
+
+    const results: SearchVerseResult[] = [];
+    
+    // Varre todos os livros da Bíblia de forma ultra rápida em memória offline
+    for (let bookIndex = 0; bookIndex < bible.length; bookIndex++) {
+      const bookData = bible[bookIndex];
+      const bookObj = BIBLE_BOOKS[bookIndex];
+      if (!bookObj) continue;
+
+      for (let chapterIndex = 0; chapterIndex < bookData.chapters.length; chapterIndex++) {
+        const chapterArr = bookData.chapters[chapterIndex];
+        for (let verseIndex = 0; verseIndex < chapterArr.length; verseIndex++) {
+          const verseText = chapterArr[verseIndex];
+          const normalizedVerse = normalizeString(verseText);
+          
+          if (normalizedVerse.includes(normalizedQuery)) {
+            results.push({
+              text: verseText,
+              reference: `${bookObj.name} ${chapterIndex + 1}:${verseIndex + 1}`,
+              bookId: bookObj.id,
+              bookName: bookObj.name,
+              chapter: chapterIndex + 1,
+              verse: verseIndex + 1
+            });
+            
+            // Limita a 50 resultados para excelente performance e legibilidade
+            if (results.length >= 50) {
+              return results;
+            }
+          }
+        }
+      }
     }
+
+    return results;
   }
 };

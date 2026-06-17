@@ -14,12 +14,16 @@ export const notificationService = {
 
   async sendImmediateTest() {
     const verse = getVerseOfTheDay();
-    if (Notification.permission === 'granted') {
-      new Notification('Jornada de Fé', {
-        body: `Sua semente diária: "${verse.text}" — ${verse.reference}`,
-        icon: 'https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop',
-        badge: 'https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop'
-      });
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('Jornada de Fé', {
+          body: `Sua semente diária: "${verse.text}" — ${verse.reference}`,
+          icon: 'https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop',
+          badge: 'https://images.unsplash.com/photo-1544427928-c49cdfebf194?q=80&w=192&h=192&auto=format&fit=crop'
+        });
+      } catch (err) {
+        console.error('Error creating Notification:', err);
+      }
     }
   },
 
@@ -35,6 +39,15 @@ export const notificationService = {
       if (lastTriggered !== today) {
         this.sendImmediateTest();
         localStorage.setItem('last_notification_date', today);
+        
+        // Dispara um CustomEvent para notificação in-app em tempo real
+        const event = new CustomEvent('app-seed-notification', {
+          detail: { 
+            title: 'Semente Diária', 
+            body: 'Seu momento sagrado de hoje chegou! Toque para receber as palavras de refrigério.' 
+          }
+        });
+        window.dispatchEvent(event);
       }
     }
   }

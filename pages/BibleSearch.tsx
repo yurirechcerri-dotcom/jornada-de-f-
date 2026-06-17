@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Book, Sparkles, Loader2, ChevronRight, ArrowLeft, CheckCircle2, AlertCircle, RefreshCcw, Info } from 'lucide-react';
 import { bibleService } from '../services/bibleService';
@@ -13,7 +13,8 @@ const BibleSearch: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchResult, setSearchResult] = useState<any[] | null>(null);
+  const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
 
   const [testament, setTestament] = useState<'all' | 'old' | 'new'>('all');
 
@@ -26,10 +27,23 @@ const BibleSearch: React.FC = () => {
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
   const userId = userData.id || userData.email;
 
+  // Efeito para rolar suavemente até o versículo selecionado/destacado
+  useEffect(() => {
+    if (view === 'reading' && highlightedVerse && chapterContent) {
+      setTimeout(() => {
+        const el = document.getElementById(`verse-${highlightedVerse}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }, [view, highlightedVerse, chapterContent]);
+
   const handleBookClick = (book: BibleBook) => {
     setSelectedBook(book);
     setView('chapters');
     setError(null);
+    setHighlightedVerse(null);
   };
 
   const handleChapterClick = async (chapter: number) => {
@@ -38,6 +52,7 @@ const BibleSearch: React.FC = () => {
     setError(null);
     setSelectedChapter(chapter);
     setChapterContent(null);
+    setHighlightedVerse(null);
     
     try {
       const content = await bibleService.getChapterText(selectedBook.name, chapter);
@@ -45,7 +60,7 @@ const BibleSearch: React.FC = () => {
         setChapterContent(content);
         setView('reading');
       } else {
-        setError("Este capítulo requer conexão com a IA. Tente Gênesis 1 ou Salmos 23 para testar o modo offline.");
+        setError("Não foi possível carregar este capítulo de maneira offline ou online. Verifique sua conexão.");
       }
     } catch (e) {
       setError("Ocorreu um erro ao carregar as escrituras.");
@@ -56,18 +71,46 @@ const BibleSearch: React.FC = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const query = searchQuery.trim();
+    if (!query) return;
     setLoading(true);
     setError(null);
+    setSearchResult(null);
+    setHighlightedVerse(null);
+
     try {
-      const res = await bibleService.searchVerse(searchQuery);
-      if (res) {
-        setSearchResult(res);
+      const parsed = bibleService.parseQuery(query);
+      if (parsed.type === 'reference' && parsed.book && parsed.chapter) {
+        // É uma referência exata! (Ex: "Efésios 6:10", "Gênesis 1")
+        setSelectedBook(parsed.book);
+        setSelectedChapter(parsed.chapter);
+        const content = await bibleService.getChapterText(parsed.book.name, parsed.chapter);
+        if (content) {
+          setChapterContent(content);
+          if (parsed.verse) {
+            setHighlightedVerse(parsed.verse);
+          }
+          setView('reading');
+          setSearchQuery(''); // Limpa busca após o sucesso
+        } else {
+          setError("Não conseguimos carregar este capítulo no momento.");
+        }
+      } else if (parsed.type === 'book' && parsed.book) {
+        // Encontrou apenas o livro (Ex: "Efésios", "Mateus")
+        setSelectedBook(parsed.book);
+        setView('chapters');
+        setSearchQuery(''); // Limpa busca
       } else {
-        setError("Busca indisponível. Configure sua API_KEY no Vercel para habilitar a pesquisa por IA.");
+        // É uma busca por palavra-chave comum (Ex: "amor", "paz")
+        const res = await bibleService.searchVerse(query);
+        if (res && res.length > 0) {
+          setSearchResult(res);
+        } else {
+          setError("Nenhum versículo foi encontrado com essa palavra. Tente palavras como 'fé', 'graça', 'misericórdia' ou busque por referências como 'Salmos 23:1' ou 'Lucas 2'.");
+        }
       }
     } catch (e) {
-      setError("Erro ao realizar a busca.");
+      setError("Erro ao realizar a busca nas Escrituras.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +130,9 @@ const BibleSearch: React.FC = () => {
           {view !== 'books' && (
             <button 
               onClick={() => {
-                setView(view === 'reading' ? 'chapters' : 'books');
+                // Se estiver lendo, volta para a seleção de capítulos
+                // Se estiver vendo capítulos de um livro selecionado na busca, e voltando, decide para onde ir
+                setView(view === 'reading' ? 'chapters' : view === 'chapters' ? 'books' : 'books');
                 setError(null);
               }}
               className="mb-2 text-[#C2A385] flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest"
@@ -106,7 +151,7 @@ const BibleSearch: React.FC = () => {
         {view === 'books' && (
           <button 
             onClick={() => setView('search')}
-            className="p-3 bg-white border border-[#C2A385]/20 rounded-2xl text-[#C2A385] shadow-sm active:scale-95"
+            className="p-3 bg-white border border-[#C2A385]/20 rounded-2xl text-[#C2A385] shadow-sm active:scale-95 animate-pulse"
           >
             <Search size={20} />
           </button>
@@ -132,7 +177,10 @@ const BibleSearch: React.FC = () => {
             <Info className="mx-auto text-amber-400" size={32} />
             <p className="text-sm text-amber-800 font-medium leading-relaxed">{error}</p>
             <button 
-              onClick={() => setView('books')}
+              onClick={() => {
+                setView('books');
+                setError(null);
+              }}
               className="flex items-center gap-2 mx-auto px-6 py-2 bg-white rounded-full border border-amber-200 text-amber-600 text-[10px] font-black uppercase tracking-widest shadow-sm"
             >
                Voltar para os Livros
@@ -166,11 +214,6 @@ const BibleSearch: React.FC = () => {
               ))}
             </div>
 
-            <div className="bg-[#C2A385]/5 p-6 rounded-[2rem] border border-[#C2A385]/10">
-              <p className="text-[10px] text-[#C2A385] font-bold uppercase tracking-widest text-center">
-                Acesso completo disponível. Capítulos lidos são salvos para acesso offline.
-              </p>
-            </div>
             <div className="bg-white rounded-[2.5rem] border border-[#C2A385]/10 overflow-hidden shadow-sm">
               {filteredBooks.map((book, idx) => (
                 <div 
@@ -220,7 +263,15 @@ const BibleSearch: React.FC = () => {
               
               <div className="space-y-6 relative z-10">
                 {chapterContent.verses.map((v: any) => (
-                  <p key={v.number} className="font-serif text-xl leading-relaxed text-[#2C3E50]">
+                  <p 
+                    key={v.number} 
+                    id={`verse-${v.number}`}
+                    className={`font-serif text-xl leading-relaxed text-[#2C3E50] p-2.5 rounded-2xl transition-all ${
+                      highlightedVerse === v.number 
+                        ? 'bg-amber-100/50 border border-amber-300/40 shadow-inner scale-[1.01]' 
+                        : ''
+                    }`}
+                  >
                     <sup className="text-[10px] font-black text-[#C2A385] mr-2 uppercase">{v.number}</sup>
                     {v.text}
                   </p>
@@ -239,27 +290,91 @@ const BibleSearch: React.FC = () => {
 
         {!loading && view === 'search' && (
           <motion.div key="search" className="space-y-6">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => { setView('books'); setError(null); }}
+                className="text-[#C2A385] flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest"
+              >
+                <ArrowLeft size={12} /> Ir para Livros
+              </button>
+            </div>
+
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Ex: Amor de Deus, Fé..."
-                className="w-full pl-6 pr-16 py-5 bg-white rounded-[2rem] border border-[#C2A385]/20 shadow-sm outline-none text-sm"
+                placeholder="Ex: 'Efésios 6:10', 'Salmos 23', ou busque palavras como 'Amor'..."
+                className="w-full pl-6 pr-16 py-5 bg-white rounded-[2rem] border border-[#C2A385]/20 shadow-sm outline-none text-sm font-medium text-[#2C3E50] focus:border-[#C2A385] transition-all"
               />
               <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-[#C2A385]">
                 <Sparkles />
               </button>
             </form>
 
-            {!error && searchResult && (
+            <p className="text-[10px] text-[#C2A385]/65 text-center mt-2 font-medium">
+              Dica: Digite referências diretas como <span className="font-bold">"João 3:16"</span> para carregar a passagem instantaneamente.
+            </p>
+
+            {!error && searchResult && Array.isArray(searchResult) && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-white p-10 rounded-[3rem] border border-[#C2A385]/10 shadow-lg text-center space-y-6"
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }}
+                className="space-y-4"
               >
-                 <p className="font-serif text-2xl italic text-[#2C3E50]">"{searchResult.text}"</p>
-                 <div className="h-px w-12 bg-[#C2A385]/20 mx-auto" />
-                 <span className="text-[10px] font-black text-[#C2A385] uppercase tracking-widest">{searchResult.reference}</span>
+                <div className="flex justify-between items-center px-4">
+                  <span className="text-[10px] font-black text-[#C2A385] uppercase tracking-widest">{searchResult.length} Versículos Encontrados Encontrados</span>
+                  <button 
+                    onClick={() => { setSearchResult(null); setSearchQuery(''); }}
+                    className="text-[#C2A385] text-[10px] font-black uppercase tracking-widest active:scale-95 bg-[#C2A385]/10 px-3 py-1.5 rounded-full"
+                  >
+                    Limpar
+                  </button>
+                </div>
+
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar pb-32">
+                  {searchResult.map((result: any, index: number) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      onClick={async () => {
+                        if (!result.bookName || !result.chapter) return;
+                        setLoading(true);
+                        setError(null);
+                        try {
+                          const book = books.find(b => b.name === result.bookName);
+                          if (book) {
+                            setSelectedBook(book);
+                            setSelectedChapter(result.chapter);
+                            const content = await bibleService.getChapterText(result.bookName, result.chapter);
+                            if (content) {
+                              setChapterContent(content);
+                              setHighlightedVerse(result.verse);
+                              setView('reading');
+                            }
+                          }
+                        } catch (err) {
+                          setError("Ocorreu um erro ao carregar o capítulo completo.");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="bg-white p-6 rounded-[2rem] border border-[#C2A385]/15 shadow-sm hover:shadow-md hover:border-[#C2A385]/30 transition-all cursor-pointer group active:scale-98 flex flex-col justify-between space-y-4"
+                    >
+                      <p className="font-serif text-[#2C3E50] leading-relaxed italic text-base">
+                        "{result.text}"
+                      </p>
+                      <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
+                        <span className="text-[10px] font-black text-[#C2A385] uppercase tracking-widest">{result.reference}</span>
+                        <span className="text-[9px] text-[#2C3E50]/40 group-hover:text-[#C2A385] transition-colors font-bold uppercase tracking-widest flex items-center gap-1">
+                          Ler Capítulo <ChevronRight size={10} />
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </motion.div>
             )}
           </motion.div>
